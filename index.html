@@ -46,8 +46,8 @@ const defs={
 jobs:[['name','Job Name'],['client','Client'],['contract','Contract Value','number'],['budget','Budget','number'],['date','Key / Start Date','date'],['status','Status']],
 costs:[['code','Cost Code'],['desc','Description'],['budget','Budget','number'],['committed','Committed','number'],['actual','Actual','number'],['forecast','Forecast','number'],['date','Due / Required Date','date']],
 materials:[['item','Material'],['qty','Qty','number'],['unit','Unit'],['needed','Required Date','date'],['area','Area / Level'],['supplier','Supplier'],['cost','Cost','number'],['status','Status']],
-trades:[['trade','Trade'],['company','Subcontractor / Company'],['contact','Contact Name'],['phone','Phone'],['email','Email'],['specialty','Specialty / Scope'],['date','Booked / Required Date','date'],['notes','Notes','textarea']],
-hire:[['category','Hire Category'],['company','Hire Company'],['item','Plant / Equipment'],['contact','Contact Name'],['phone','Phone'],['rate','Rate','number'],['unit','Rate Unit'],['date','Booked / Required Date','date'],['notes','Notes','textarea']],
+trades:[['trade','Trade'],['company','Subcontractor / Company'],['contact','Contact Name'],['phone','Phone'],['email','Email'],['specialty','Specialty / Scope'],['date','Booked / Required Date','date'],['price','Package / Quoted Price','number'],['status','Status'],['notes','Notes','textarea']],
+hire:[['category','Hire Category'],['company','Hire Company'],['item','Plant / Equipment'],['contact','Contact Name'],['phone','Phone'],['rate','Rate','number'],['unit','Rate Unit'],['date','Booked / Required Date','date'],['status','Status'],['notes','Notes','textarea']],
 labour:[['worker','Worker / Crew'],['trade','Trade'],['date','Date','date'],['hours','Hours','number'],['rate','Hourly Cost','number'],['area','Area / Activity']],
 bookings:[['group','Group'],['category','Category'],['details','Booking / Scope'],['date','Date','date'],['time','Time','time'],['supplier','Supplier / Subcontractor'],['status','Status']],
 issues:[['issue','Issue'],['area','Area'],['priority','Priority'],['owner','Management Owner'],['due','Due Date','date'],['status','Status']],
@@ -125,21 +125,29 @@ function renderBookings(){
 }
 function costRows(){
  let rows=[];
- (db.costs||[]).forEach((x,i)=>rows.push({source:'Manual Costs',category:x.code||'',item:x.desc||'',company:'',qty:'',unit:'',rate:'',budget:+x.budget||0,committed:+x.committed||0,actual:+x.actual||0,forecast:+x.forecast||0,date:x.date||'',type:'costs',index:i}));
- (db.trades||[]).forEach((x,i)=>rows.push({source:'Trades',category:x.trade||'',item:x.specialty||'',company:x.company||'',qty:'',unit:'',rate:'',budget:0,committed:0,actual:0,forecast:0,date:x.date||'',type:'trades',index:i}));
- (db.hire||[]).forEach((x,i)=>rows.push({source:'Hire / Plant',category:x.category||'',item:x.item||'',company:x.company||'',qty:'',unit:x.unit||'',rate:+x.rate||0,budget:0,committed:0,actual:0,forecast:+x.rate||0,date:x.date||'',type:'hire',index:i}));
- (db.labour||[]).forEach((x,i)=>{let total=(+x.hours||0)*(+x.rate||0);rows.push({source:'Labour',category:x.trade||'',item:x.area||'',company:x.worker||'',qty:+x.hours||0,unit:'hrs',rate:+x.rate||0,budget:0,committed:0,actual:total,forecast:total,date:x.date||'',type:'labour',index:i})});
- (db.materials||[]).forEach((x,i)=>rows.push({source:'Materials',category:x.item||'',item:x.area||'',company:x.supplier||'',qty:x.qty||'',unit:x.unit||'',rate:'',budget:0,committed:0,actual:+x.cost||0,forecast:+x.cost||0,date:x.needed||'',type:'materials',index:i}));
+ (db.costs||[]).forEach((x,i)=>rows.push({source:'Manual Costs',category:x.code||'',item:x.desc||'',company:'',date:x.date||'',status:'',qty:'',unit:'',rate:'',budget:+x.budget||0,committed:+x.committed||0,actual:+x.actual||0,forecast:+x.forecast||0,type:'costs',index:i}));
+ (db.trades||[]).forEach((x,i)=>{let p=+x.price||0;rows.push({source:'Trades',category:x.trade||'',item:x.specialty||'',company:x.company||'',date:x.date||'',status:x.status||'',qty:'',unit:'',rate:'',budget:0,committed:p,actual:0,forecast:p,type:'trades',index:i})});
+ (db.hire||[]).forEach((x,i)=>{let r=+x.rate||0;rows.push({source:'Hire / Plant',category:x.category||'',item:x.item||'',company:x.company||'',date:x.date||'',status:x.status||'',qty:'',unit:x.unit||'',rate:r,budget:0,committed:r,actual:0,forecast:r,type:'hire',index:i})});
+ (db.labour||[]).forEach((x,i)=>{let total=(+x.hours||0)*(+x.rate||0);rows.push({source:'Labour',category:x.trade||'',item:x.area||'',company:x.worker||'',date:x.date||'',status:'',qty:+x.hours||0,unit:'hrs',rate:+x.rate||0,budget:0,committed:total,actual:total,forecast:total,type:'labour',index:i})});
+ (db.materials||[]).forEach((x,i)=>{let v=+x.cost||0;rows.push({source:'Materials',category:x.item||'',item:x.area||'',company:x.supplier||'',date:x.needed||'',status:x.status||'',qty:x.qty||'',unit:x.unit||'',rate:'',budget:0,committed:v,actual:v,forecast:v,type:'materials',index:i})});
  return rows;
 }
+function fmtDate(v){if(!v)return '';let d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});}
 function renderCosts(){
- let rows=costRows(), sources=['Manual Costs','Trades','Hire / Plant','Labour','Materials'];
+ let rows=costRows().sort((a,b)=>(a.date||'9999-99-99').localeCompare(b.date||'9999-99-99')||a.source.localeCompare(b.source)||a.category.localeCompare(b.category));
  let totals=rows.reduce((a,r)=>{a.budget+=r.budget;a.committed+=r.committed;a.actual+=r.actual;a.forecast+=r.forecast;return a},{budget:0,committed:0,actual:0,forecast:0});
  document.getElementById('costSummary').innerHTML=[['Budget',totals.budget],['Committed',totals.committed],['Actual',totals.actual],['Forecast',totals.forecast]].map(x=>'<div class="card kpi"><small>'+x[0]+'</small><b>'+money(x[1])+'</b></div>').join('');
  if(!rows.length){document.getElementById('costsTable').innerHTML='<p>No costs entered yet.</p>';return;}
- let html='<table class="costsheet"><thead><tr><th>Source</th><th>Category / Trade</th><th>Description / Item</th><th>Company / Person</th><th>Date</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Budget</th><th>Committed</th><th>Actual</th><th>Forecast</th><th></th></tr></thead><tbody>';
- sources.forEach(source=>{let group=rows.filter(r=>r.source===source);if(!group.length)return;let sub=group.reduce((a,r)=>{a.budget+=r.budget;a.committed+=r.committed;a.actual+=r.actual;a.forecast+=r.forecast;return a},{budget:0,committed:0,actual:0,forecast:0});html+='<tr class="group-row"><td colspan="13">'+source+'</td></tr>';group.forEach(r=>{html+='<tr><td>'+r.source+'</td><td>'+r.category+'</td><td>'+r.item+'</td><td>'+r.company+'</td><td>'+r.date+'</td><td class="num">'+r.qty+'</td><td>'+r.unit+'</td><td class="num">'+(r.rate!==''?money(r.rate):'')+'</td><td class="num">'+money(r.budget)+'</td><td class="num">'+money(r.committed)+'</td><td class="num">'+money(r.actual)+'</td><td class="num">'+money(r.forecast)+'</td><td><button class="btn" onclick="editRow(\''+r.type+'\','+r.index+')">Edit</button></td></tr>';});html+='<tr class="subtotal"><td colspan="8">'+source+' subtotal</td><td class="num">'+money(sub.budget)+'</td><td class="num">'+money(sub.committed)+'</td><td class="num">'+money(sub.actual)+'</td><td class="num">'+money(sub.forecast)+'</td><td></td></tr>';});
- html+='<tr class="subtotal"><td colspan="8">TOTAL</td><td class="num">'+money(totals.budget)+'</td><td class="num">'+money(totals.committed)+'</td><td class="num">'+money(totals.actual)+'</td><td class="num">'+money(totals.forecast)+'</td><td></td></tr></tbody></table>';
+ let byDate={};rows.forEach(r=>(byDate[r.date||'No date']??=[]).push(r));
+ let html='';
+ Object.entries(byDate).forEach(([date,dayRows])=>{
+   let dayTotals=dayRows.reduce((a,r)=>{a.budget+=r.budget;a.committed+=r.committed;a.actual+=r.actual;a.forecast+=r.forecast;return a},{budget:0,committed:0,actual:0,forecast:0});
+   html+='<div style="margin:24px 0 8px;border-top:4px solid #17243b;padding-top:12px"><h2 style="margin:0 0 10px">'+(date==='No date'?'No date assigned':fmtDate(date))+'</h2>';
+   html+='<table class="costsheet"><thead><tr><th>Source</th><th>Trade / Category</th><th>Description / Area</th><th>Company / Person</th><th>Date</th><th>Status</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Budget</th><th>Committed</th><th>Actual</th><th>Forecast</th><th></th></tr></thead><tbody>';
+   dayRows.forEach(r=>{html+='<tr><td><b>'+r.source+'</b></td><td>'+r.category+'</td><td>'+r.item+'</td><td>'+r.company+'</td><td>'+fmtDate(r.date)+'</td><td>'+(r.status||'')+'</td><td class="num">'+r.qty+'</td><td>'+r.unit+'</td><td class="num">'+(r.rate!==''?money(r.rate):'')+'</td><td class="num">'+money(r.budget)+'</td><td class="num">'+money(r.committed)+'</td><td class="num">'+money(r.actual)+'</td><td class="num">'+money(r.forecast)+'</td><td><button class="btn" onclick="editRow(\''+r.type+'\','+r.index+')">Edit</button></td></tr>';});
+   html+='<tr class="subtotal"><td colspan="9">'+(date==='No date'?'Unscheduled':'Date')+' subtotal</td><td class="num">'+money(dayTotals.budget)+'</td><td class="num">'+money(dayTotals.committed)+'</td><td class="num">'+money(dayTotals.actual)+'</td><td class="num">'+money(dayTotals.forecast)+'</td><td></td></tr></tbody></table></div>';
+ });
+ html+='<table class="costsheet" style="margin-top:18px"><tbody><tr class="group-row"><td colspan="9">JOB TOTAL</td><td class="num">'+money(totals.budget)+'</td><td class="num">'+money(totals.committed)+'</td><td class="num">'+money(totals.actual)+'</td><td class="num">'+money(totals.forecast)+'</td><td></td></tr></tbody></table>';
  document.getElementById('costsTable').innerHTML=html;
 }
 function render(){
