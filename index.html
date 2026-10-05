@@ -25,9 +25,9 @@ dialog{border:0;border-radius:12px;box-shadow:0 20px 80px #0005;max-width:650px;
 </style>
 </head>
 <body>
-<header><div><div class="brand">MANAGEMENT</div><div class="sub">Construction Job Control — V1 prototype</div></div><select id="role"><option>Management</option><option>Site Supervisor</option></select></header>
+<header><div><div class="brand">MANAGEMENT</div><div class="sub">Construction Job Control <span id="cloudState">— This device only</span></div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn green" onclick="openSync()">Share / Sync</button><select id="role"><option>Management</option><option>Site Supervisor</option></select></div></header>
 <nav id="nav"></nav>
-<main>
+<dialog id="syncDlg"><form method="dialog" onsubmit="return false"><h2>Share & Sync Job</h2><p class="lead">Create a code on this device, then enter the same code on another phone or computer.</p><div id="syncCurrent"></div><div class="formgrid"><label class="full">Job Code<input id="joinCode" maxlength="12" placeholder="e.g. MGT-A7K4P9" style="text-transform:uppercase"></label></div><div class="toolbar" style="margin-top:16px"><button type="button" class="primary green" onclick="createCloudJob()">Create Code From This Device</button><button type="button" class="primary" onclick="joinCloudJob()">Join With Code</button><button type="button" class="btn red" onclick="leaveCloudJob()">Stop Syncing</button><button type="button" class="btn" onclick="document.getElementById('syncDlg').close()">Close</button></div><p id="syncMsg" class="lead"></p></form></dialog><main>
 <section id="dashboard" class="page active"><h1>Job Dashboard</h1><p class="lead">Live commercial and site overview.</p><div class="grid" id="kpis"></div>
 <div class="two"><div class="section management"><h3>Management Actions</h3><div id="managementActions"></div></div><div class="section maker"><h3>Site Supervisor — Site Priorities</h3><div id="makerPriorities"></div></div></div></section>
 <section id="overview" class="page"><h1>Full Job Overview</h1><p class="lead">Master construction manager workbook — the job from commencement through completion.</p><div class="grid" id="overviewSummary"></div><div class="section"><div id="overviewSheet"></div></div></section><section id="jobs" class="page"><h1>Jobs</h1><p class="lead">Create and manage projects.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('jobs')">+ New Job</button></div><div id="jobsTable"></div></div></section>
@@ -41,6 +41,7 @@ dialog{border:0;border-radius:12px;box-shadow:0 20px 80px #0005;max-width:650px;
 <section id="daily" class="page"><h1>Site Supervisor Daily</h1><p class="lead">Site supervisor diary: what happened, what's next, what's needed.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('daily')">+ Daily Report</button></div><div id="dailyTable"></div></div></section>
 </main>
 <dialog id="dlg"><form method="dialog"><h2 id="formTitle"></h2><div id="formFields" class="formgrid"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn" value="cancel">Cancel</button><button class="btn green" value="default" onclick="saveForm(event)">Save</button></div></form></dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const defs={
 jobs:[['name','Job Name'],['client','Client'],['contract','Contract Value','number'],['budget','Budget','number'],['date','Key / Start Date','date'],['status','Status']],
@@ -60,6 +61,40 @@ if(localStorage.getItem('managementDataVersion')!==CLEAN_SLATE_VERSION){
   localStorage.setItem('managementDataVersion',CLEAN_SLATE_VERSION);
 }
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{
+
+const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
+const SUPABASE_KEY='sb_publishable_O8Zj8F17bHON1N061PXHkw_Xyc48pFS';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let cloudCode=localStorage.getItem('managementCloudCode')||'';
+let cloudBusy=false,cloudTimer=null,lastCloudJson='';
+function normalCode(v){return (v||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim()}
+function newJobCode(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='MGT-';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s}
+function setCloudState(msg){let e=document.getElementById('cloudState');if(e)e.textContent=msg}
+function openSync(){document.getElementById('joinCode').value=cloudCode;document.getElementById('syncCurrent').innerHTML=cloudCode?'<p><b>Connected code:</b> <span style="font-size:20px">'+cloudCode+'</span></p>':'<p>This device is not connected to a shared job yet.</p>';document.getElementById('syncMsg').textContent='';document.getElementById('syncDlg').showModal()}
+async function createCloudJob(){
+ let code=newJobCode(),msg=document.getElementById('syncMsg');msg.textContent='Creating shared job…';
+ let {error}=await sb.rpc('create_management_job',{p_code:code,p_data:db});
+ if(error){msg.textContent='Could not create it yet: '+error.message;return}
+ cloudCode=code;localStorage.setItem('managementCloudCode',code);lastCloudJson=JSON.stringify(db);startCloud();openSync();msg.textContent='Created. Enter this code on your other device: '+code;
+}
+async function joinCloudJob(){
+ let code=normalCode(document.getElementById('joinCode').value),msg=document.getElementById('syncMsg');if(!code){msg.textContent='Enter a job code first.';return}
+ msg.textContent='Connecting…';let {data,error}=await sb.rpc('load_management_job',{p_code:code});
+ if(error||!data){msg.textContent='Code not found or could not connect.';return}
+ if(!confirm('Load the shared job onto this device? This will replace the current local data on this device.'))return;
+ db=data;cloudCode=code;localStorage.setItem('managementCloudCode',code);localStorage.setItem('mmdb',JSON.stringify(db));lastCloudJson=JSON.stringify(db);render();startCloud();openSync();msg.textContent='Connected. This device will now stay synced.';
+}
+function leaveCloudJob(){cloudCode='';localStorage.removeItem('managementCloudCode');if(cloudTimer)clearInterval(cloudTimer);cloudTimer=null;setCloudState('— This device only');document.getElementById('syncDlg').close()}
+async function pushCloud(){
+ if(!cloudCode||cloudBusy)return;let j=JSON.stringify(db);if(j===lastCloudJson)return;cloudBusy=true;
+ let {error}=await sb.rpc('save_management_job',{p_code:cloudCode,p_data:db});if(!error){lastCloudJson=j;setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');
+ cloudBusy=false;
+}
+async function pullCloud(){
+ if(!cloudCode||cloudBusy)return;cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
+ if(!error&&data){let remote=JSON.stringify(data);if(remote!==lastCloudJson){db=data;localStorage.setItem('mmdb',remote);lastCloudJson=remote;render()}setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');cloudBusy=false;
+}
+function startCloud(){if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
 jobs:[],
 costs:[],
 materials:[],
@@ -100,7 +135,7 @@ const pages=['dashboard','overview','jobs','costs','materials','trades','hire','
 const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
-function persist(){localStorage.setItem('mmdb',JSON.stringify(db));render()}
+function persist(){localStorage.setItem('mmdb',JSON.stringify(db));render();pushCloud()}
 function nav(){document.getElementById('nav').innerHTML=pages.map((p,i)=>`<button class="${i===0?'active':''}" onclick="show('${p}',this)">${labels[p]}</button>`).join('')}
 function show(p,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(p).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
 function table(type){let d=db[type], cols=defs[type];if(type==='bookings')d=[...d].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||(a.group||'').localeCompare(b.group||'')||(a.category||'').localeCompare(b.category||'')); if(!d.length)return '<p>No records yet.</p>';return `<table><thead><tr>${cols.map(c=>`<th>${c[1]}</th>`).join('')}<th></th></tr></thead><tbody>${d.map((r,i)=>`<tr>${cols.map(c=>`<td>${c[2]==='image'?(r[c[0]]?'<img src="'+r[c[0]]+'" style="width:90px;height:70px;object-fit:cover;border-radius:6px">':''):['budget','committed','actual','forecast','contract','cost','agreed','paid','rate'].includes(c[0])?money(r[c[0]]):r[c[0]]??''}</td>`).join('')}<td><button class="btn" onclick="editRow('${type}',${i})">Edit</button> <button class="btn red" onclick="removeRow('${type}',${i})">Delete</button></td></tr>`).join('')}</tbody></table>`}
@@ -207,5 +242,5 @@ async function saveForm(e){e.preventDefault();let fd=new FormData(document.query
 function editRow(t,i){openForm(t,i)}
 function removeRow(t,i){if(confirm('Delete this record?')){db[t].splice(i,1);persist()}}
 document.getElementById('role').addEventListener('change',e=>{if(e.target.value==='Site Supervisor'){document.querySelectorAll('.management').forEach(x=>x.style.opacity=.55)}else document.querySelectorAll('.management').forEach(x=>x.style.opacity=1)});
-nav();render();
+nav();render();startCloud();
 </script></body></html>
