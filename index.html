@@ -62,6 +62,17 @@ if(localStorage.getItem('managementDataVersion')!==CLEAN_SLATE_VERSION){
 }
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{
 
+jobs:[],
+costs:[],
+materials:[],
+trades:[],
+labour:[],
+bookings:[],
+issues:[],
+daily:[],
+hire:[]
+};
+
 const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
 const SUPABASE_KEY='sb_publishable_O8Zj8F17bHON1N061PXHkw_Xyc48pFS';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -95,16 +106,7 @@ async function pullCloud(){
  if(!error&&data){let remote=JSON.stringify(data);if(remote!==lastCloudJson){db=data;localStorage.setItem('mmdb',remote);lastCloudJson=remote;render()}setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');cloudBusy=false;
 }
 function startCloud(){if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
-jobs:[],
-costs:[],
-materials:[],
-trades:[],
-labour:[],
-bookings:[],
-issues:[],
-daily:[],
-hire:[]
-};
+
 
 const hireCategories=['Truck / Tipper','Crane','Concrete Pump','Excavator','Bobcat / Skid Steer','EWP / Scissor Lift','Forklift / Telehandler','Loader','Roller / Compactor','Generator','Site Shed','Portable Toilet','Skip Bin / Waste','Temporary Fencing','Traffic Control Equipment','Tools / Small Plant','Other'];
 const tradeCategories=['Preliminaries','Demolition','Excavation / Earthworks','Piling','Formwork','Reinforcement','Concrete','Structural Steel','Brickwork / Blockwork','Carpentry','Roofing','Windows / Glazing','Waterproofing','Plasterboard / Ceilings','Rendering','Tiling','Flooring','Joinery','Painting','Plumbing','Electrical','Mechanical / HVAC','Fire Services','Landscaping','Fencing','Cleaning','Other'];
@@ -132,7 +134,7 @@ if(!db.hire)db.hire=[];
 localStorage.setItem('mmdb',JSON.stringify(db));
 
 const pages=['dashboard','overview','jobs','costs','materials','trades','hire','labour','bookings','issues','daily'];
-const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
+const labels={dashboard:'Dashboard',overview:'Job Overview',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
 function persist(){localStorage.setItem('mmdb',JSON.stringify(db));render();pushCloud()}
