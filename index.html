@@ -74,6 +74,28 @@ hire:[]
 const hireCategories=['Truck / Tipper','Crane','Concrete Pump','Excavator','Bobcat / Skid Steer','EWP / Scissor Lift','Forklift / Telehandler','Loader','Roller / Compactor','Generator','Site Shed','Portable Toilet','Skip Bin / Waste','Temporary Fencing','Traffic Control Equipment','Tools / Small Plant','Other'];
 const tradeCategories=['Preliminaries','Demolition','Excavation / Earthworks','Piling','Formwork','Reinforcement','Concrete','Structural Steel','Brickwork / Blockwork','Carpentry','Roofing','Windows / Glazing','Waterproofing','Plasterboard / Ceilings','Rendering','Tiling','Flooring','Joinery','Painting','Plumbing','Electrical','Mechanical / HVAC','Fire Services','Landscaping','Fencing','Cleaning','Other'];
 if(!db.hire)db.hire=[];
+
+// Backfill bookings for dated records saved before automatic scheduling was added.
+['jobs','costs','materials','trades','hire','labour','issues'].forEach(type=>{
+  (db[type]||[]).forEach((o,i)=>{
+    let date=o.date||o.needed||o.due||'';
+    if(!date)return;
+    if(!o.autoKey)o.autoKey='backfill|'+type+'|'+i+'|'+date;
+    if(!db.bookings.some(b=>b.autoKey===o.autoKey)){
+      let meta=null;
+      if(type==='trades')meta={group:'Trade',category:o.trade||'Trade',details:o.specialty||o.trade||'',supplier:o.company||''};
+      if(type==='hire')meta={group:'Hire / Plant',category:o.category||'Hire',details:o.item||o.category||'',supplier:o.company||''};
+      if(type==='labour')meta={group:'Labour',category:o.trade||'Labour',details:o.area||o.worker||'',supplier:o.worker||''};
+      if(type==='materials')meta={group:'Materials',category:o.item||'Material',details:(o.qty?o.qty+' '+(o.unit||'')+' ':'')+(o.item||''),supplier:o.supplier||''};
+      if(type==='issues')meta={group:'Site Issue',category:o.priority||'Issue',details:o.issue||'',supplier:o.owner||''};
+      if(type==='jobs')meta={group:'Job',category:'Key Date',details:o.name||'',supplier:o.client||''};
+      if(type==='costs')meta={group:'Cost',category:o.code||'Cost',details:o.desc||'',supplier:''};
+      if(meta)db.bookings.push({...meta,date,time:'',status:'Scheduled',autoKey:o.autoKey});
+    }
+  });
+});
+localStorage.setItem('mmdb',JSON.stringify(db));
+
 const pages=['dashboard','jobs','costs','materials','trades','hire','labour','bookings','issues','daily'];
 const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';let editingIndex=null;
