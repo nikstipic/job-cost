@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Management / Maker</title>
+<title>Management</title>
 <style>
 :root{--bg:#0b1220;--panel:#111b2e;--panel2:#17243b;--text:#edf3fb;--muted:#9fb0c8;--line:#263754;--accent:#54d18b;--warn:#ffca5c;--danger:#ff7272}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f3f6fa;color:#172033}
@@ -25,19 +25,19 @@ dialog{border:0;border-radius:12px;box-shadow:0 20px 80px #0005;max-width:650px;
 </style>
 </head>
 <body>
-<header><div><div class="brand">MANAGEMENT <span>/ MAKER</span></div><div class="sub">Construction Job Control — V1 prototype</div></div><select id="role"><option>Management</option><option>Maker</option></select></header>
+<header><div><div class="brand">MANAGEMENT</div><div class="sub">Construction Job Control — V1 prototype</div></div><select id="role"><option>Management</option><option>Site Supervisor</option></select></header>
 <nav id="nav"></nav>
 <main>
 <section id="dashboard" class="page active"><h1>Job Dashboard</h1><p class="lead">Live commercial and site overview.</p><div class="grid" id="kpis"></div>
-<div class="two"><div class="section management"><h3>Management Actions</h3><div id="managementActions"></div></div><div class="section maker"><h3>Maker — Site Priorities</h3><div id="makerPriorities"></div></div></div></section>
+<div class="two"><div class="section management"><h3>Management Actions</h3><div id="managementActions"></div></div><div class="section maker"><h3>Site Supervisor — Site Priorities</h3><div id="makerPriorities"></div></div></div></section>
 <section id="jobs" class="page"><h1>Jobs</h1><p class="lead">Create and manage projects.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('jobs')">+ New Job</button></div><div id="jobsTable"></div></div></section>
 <section id="costs" class="page"><h1>Cost Control</h1><p class="lead">Budget, committed, actual and forecast by cost code.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('costs')">+ Cost Item</button></div><div id="costsTable"></div></div></section>
 <section id="materials" class="page"><h1>Materials & Orders</h1><p class="lead">Site requests become purchasing actions.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('materials')">+ Material Request</button></div><div id="materialsTable"></div></div></section>
 <section id="trades" class="page"><h1>Trades</h1><p class="lead">Trade packages, agreed values and progress.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('trades')">+ Trade Package</button></div><div id="tradesTable"></div></div></section>
 <section id="labour" class="page"><h1>Labour</h1><p class="lead">Track workers, hours and job cost.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('labour')">+ Labour Entry</button></div><div id="labourTable"></div></div></section>
 <section id="bookings" class="page"><h1>Bookings & Programme</h1><p class="lead">Deliveries, concrete, pumps, cranes, inspections and trades.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('bookings')">+ Booking</button></div><div id="bookingsTable"></div></div></section>
-<section id="issues" class="page"><h1>Site Issues</h1><p class="lead">Maker raises it; Management owns the response.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('issues')">+ Raise Issue</button></div><div id="issuesTable"></div></div></section>
-<section id="daily" class="page"><h1>Maker Daily</h1><p class="lead">Simple site diary: what happened, what's next, what's needed.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('daily')">+ Daily Report</button></div><div id="dailyTable"></div></div></section>
+<section id="issues" class="page"><h1>Site Issues</h1><p class="lead">Site Supervisor raises it; Management owns the response.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('issues')">+ Raise Issue</button></div><div id="issuesTable"></div></div></section>
+<section id="daily" class="page"><h1>Site Supervisor Daily</h1><p class="lead">Site supervisor diary: what happened, what's next, what's needed.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('daily')">+ Daily Report</button></div><div id="dailyTable"></div></div></section>
 </main>
 <dialog id="dlg"><form method="dialog"><h2 id="formTitle"></h2><div id="formFields" class="formgrid"></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn" value="cancel">Cancel</button><button class="btn green" value="default" onclick="saveForm(event)">Save</button></div></form></dialog>
 <script>
@@ -62,7 +62,7 @@ issues:[{issue:'Confirm pump and concrete booking',area:'Level 3',priority:'Urge
 daily:[{date:'2026-10-05',area:'Level 3',workers:10,completed:'Deck shutters progressing','tomorrow':'Finish deck and start penetrations',needed:'120 sheets formply'}]
 };
 const pages=['dashboard','jobs','costs','materials','trades','labour','bookings','issues','daily'];
-const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Maker Daily'};
+const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
 function persist(){localStorage.setItem('mmdb',JSON.stringify(db));render()}
@@ -79,6 +79,6 @@ document.getElementById('makerPriorities').innerHTML=db.materials.filter(x=>x.st
 function openForm(type){currentType=type;document.getElementById('formTitle').textContent='Add '+labels[type];document.getElementById('formFields').innerHTML=defs[type].map(c=>`<label class="${c[2]==='textarea'?'full':''}">${c[1]}<${c[2]==='textarea'?'textarea':'input'} name="${c[0]}" ${c[2]&&c[2]!=='textarea'?`type="${c[2]}"`:''}></${c[2]==='textarea'?'textarea':'input'}></label>`).join('');document.getElementById('dlg').showModal()}
 function saveForm(e){e.preventDefault();let fd=new FormData(document.querySelector('#dlg form')),o={};defs[currentType].forEach(c=>o[c[0]]=fd.get(c[0])||'');db[currentType].push(o);persist();document.getElementById('dlg').close()}
 function removeRow(t,i){if(confirm('Delete this record?')){db[t].splice(i,1);persist()}}
-document.getElementById('role').addEventListener('change',e=>{if(e.target.value==='Maker'){document.querySelectorAll('.management').forEach(x=>x.style.opacity=.55)}else document.querySelectorAll('.management').forEach(x=>x.style.opacity=1)});
+document.getElementById('role').addEventListener('change',e=>{if(e.target.value==='Site Supervisor'){document.querySelectorAll('.management').forEach(x=>x.style.opacity=.55)}else document.querySelectorAll('.management').forEach(x=>x.style.opacity=1)});
 nav();render();
 </script></body></html>
