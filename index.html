@@ -51,6 +51,12 @@ bookings:[['type','Booking Type'],['details','Details'],['date','Date','date'],[
 issues:[['issue','Issue'],['area','Area'],['priority','Priority'],['owner','Management Owner'],['due','Due Date','date'],['status','Status']],
 daily:[['date','Date','date'],['area','Area / Level'],['workers','Workers On Site','number'],['completed','Work Completed','textarea'],['tomorrow','Tomorrow / Next','textarea'],['needed','Materials / Help Needed','textarea']]
 };
+// One-time cleanup of legacy V1 demo data already saved in this browser.
+const CLEAN_SLATE_VERSION='management-clean-v1';
+if(localStorage.getItem('managementDataVersion')!==CLEAN_SLATE_VERSION){
+  localStorage.removeItem('mmdb');
+  localStorage.setItem('managementDataVersion',CLEAN_SLATE_VERSION);
+}
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{
 jobs:[],
 costs:[],
@@ -61,6 +67,7 @@ bookings:[],
 issues:[],
 daily:[]
 };
+
 const pages=['dashboard','jobs','costs','materials','trades','labour','bookings','issues','daily'];
 const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';
