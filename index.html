@@ -17,7 +17,7 @@ h1{margin:0 0 6px}.lead{color:#66758b;margin-top:0}.grid{display:grid;grid-templ
 .section{background:#fff;border:1px solid #dfe6ef;border-radius:12px;padding:16px;margin:14px 0;overflow:auto}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}button.primary,.btn{background:#17243b;color:#fff;border:0;padding:9px 13px;border-radius:8px;cursor:pointer}.green{background:#1f8f59!important}.red{background:#b94c4c!important}
 input,select,textarea{padding:9px;border:1px solid #cbd5e1;border-radius:7px;min-width:130px}textarea{min-height:70px}
-table{border-collapse:collapse;width:100%;font-size:13px}.costsheet{min-width:1100px}.costsheet th{background:#e9eef5;border:1px solid #cbd5e1}.costsheet td{border:1px solid #dfe6ef}.costsheet .group-row td{background:#17243b;color:#fff;font-weight:800;font-size:13px}.costsheet .subtotal td{background:#f1f5f9;font-weight:800}.costsheet .num{text-align:right;font-variant-numeric:tabular-nums}th,td{border-bottom:1px solid #e7ecf2;padding:10px;text-align:left;white-space:nowrap}th{background:#f6f8fb;position:sticky;top:0}
+table{border-collapse:collapse;width:100%;font-size:13px}.costsheet{min-width:1100px}.overview-sheet{min-width:1250px}.overview-sheet th{position:sticky;top:0;background:#e9eef5;border:1px solid #cbd5e1;z-index:1}.overview-sheet td{border:1px solid #dfe6ef;vertical-align:top}.overview-sheet .phase td{background:#17243b;color:#fff;font-weight:800}.overview-sheet .phase-total td{background:#f1f5f9;font-weight:800}.overview-sheet .done{text-decoration:line-through;opacity:.65}.costsheet th{background:#e9eef5;border:1px solid #cbd5e1}.costsheet td{border:1px solid #dfe6ef}.costsheet .group-row td{background:#17243b;color:#fff;font-weight:800;font-size:13px}.costsheet .subtotal td{background:#f1f5f9;font-weight:800}.costsheet .num{text-align:right;font-variant-numeric:tabular-nums}th,td{border-bottom:1px solid #e7ecf2;padding:10px;text-align:left;white-space:nowrap}th{background:#f6f8fb;position:sticky;top:0}
 .badge{padding:4px 8px;border-radius:999px;background:#e7eef8;font-size:11px}.urgent{background:#ffe1e1;color:#9e2727}.done{background:#dff6e9;color:#1c7449}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.maker{border-left:5px solid #54d18b}.management{border-left:5px solid #5c8df6}
 dialog{border:0;border-radius:12px;box-shadow:0 20px 80px #0005;max-width:650px;width:92%}dialog::backdrop{background:#0007}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;color:#66758b}.formgrid input,.formgrid select,.formgrid textarea{width:100%;margin-top:4px}.full{grid-column:1/-1}
@@ -30,7 +30,7 @@ dialog{border:0;border-radius:12px;box-shadow:0 20px 80px #0005;max-width:650px;
 <main>
 <section id="dashboard" class="page active"><h1>Job Dashboard</h1><p class="lead">Live commercial and site overview.</p><div class="grid" id="kpis"></div>
 <div class="two"><div class="section management"><h3>Management Actions</h3><div id="managementActions"></div></div><div class="section maker"><h3>Site Supervisor — Site Priorities</h3><div id="makerPriorities"></div></div></div></section>
-<section id="jobs" class="page"><h1>Jobs</h1><p class="lead">Create and manage projects.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('jobs')">+ New Job</button></div><div id="jobsTable"></div></div></section>
+<section id="overview" class="page"><h1>Full Job Overview</h1><p class="lead">Master construction manager workbook — the job from commencement through completion.</p><div class="grid" id="overviewSummary"></div><div class="section"><div id="overviewSheet"></div></div></section><section id="jobs" class="page"><h1>Jobs</h1><p class="lead">Create and manage projects.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('jobs')">+ New Job</button></div><div id="jobsTable"></div></div></section>
 <section id="costs" class="page"><h1>Cost Control</h1><p class="lead">Master commercial sheet — all entered job costs in one Excel-style view.</p><div class="grid" id="costSummary"></div><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('costs')">+ Manual Cost Item</button></div><div id="costsTable"></div></div></section>
 <section id="materials" class="page"><h1>Materials & Orders</h1><p class="lead">Site requests become purchasing actions.</p><div class="section"><div class="toolbar"><button class="primary green" onclick="openForm('materials')">+ Material Request</button></div><div id="materialsTable"></div></div></section>
 <section id="trades" class="page"><h1>Trades</h1><p class="lead">Your subcontractor directory organised by construction trade.</p><div class="section"><div class="toolbar"><select id="tradeFilter" onchange="renderTrades()"></select><button class="primary green" onclick="openForm('trades')">+ Add Subcontractor</button></div><div id="tradesTable"></div></div></section>
@@ -96,7 +96,7 @@ if(!db.hire)db.hire=[];
 });
 localStorage.setItem('mmdb',JSON.stringify(db));
 
-const pages=['dashboard','jobs','costs','materials','trades','hire','labour','bookings','issues','daily'];
+const pages=['dashboard','overview','jobs','costs','materials','trades','hire','labour','bookings','issues','daily'];
 const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
@@ -150,8 +150,30 @@ function renderCosts(){
  html+='<table class="costsheet" style="margin-top:18px"><tbody><tr class="group-row"><td colspan="9">JOB TOTAL</td><td class="num">'+money(totals.budget)+'</td><td class="num">'+money(totals.committed)+'</td><td class="num">'+money(totals.actual)+'</td><td class="num">'+money(totals.forecast)+'</td><td></td></tr></tbody></table>';
  document.getElementById('costsTable').innerHTML=html;
 }
+function overviewRows(){
+ let r=[];
+ (db.jobs||[]).forEach((x,i)=>r.push({phase:'01 Job Setup',type:'Job',category:x.name||'',detail:x.client||'',company:'',date:x.date||'',status:x.status||'',cost:+x.contract||0,notes:'Contract / project setup',src:'jobs',idx:i}));
+ (db.bookings||[]).forEach((x,i)=>r.push({phase:'02 Programme & Bookings',type:x.group||'Booking',category:x.category||'',detail:x.details||'',company:x.supplier||'',date:x.date||'',status:x.completed?'Completed':(x.status||'Scheduled'),cost:0,notes:x.time?('Time: '+x.time):'',src:'bookings',idx:i,done:!!x.completed}));
+ (db.trades||[]).forEach((x,i)=>r.push({phase:'03 Trades & Subcontractors',type:'Trade',category:x.trade||'',detail:x.specialty||'',company:x.company||'',date:x.date||'',status:x.status||'',cost:+x.price||0,notes:x.notes||'',src:'trades',idx:i}));
+ (db.labour||[]).forEach((x,i)=>r.push({phase:'04 Labour',type:'Labour',category:x.trade||'',detail:x.area||'',company:x.worker||'',date:x.date||'',status:'',cost:(+x.hours||0)*(+x.rate||0),notes:(x.hours||'')+' hrs @ '+(x.rate?money(x.rate):''),src:'labour',idx:i}));
+ (db.materials||[]).forEach((x,i)=>r.push({phase:'05 Materials & Orders',type:'Material',category:x.item||'',detail:x.area||'',company:x.supplier||'',date:x.needed||'',status:x.status||'',cost:+x.cost||0,notes:(x.qty||'')+' '+(x.unit||''),src:'materials',idx:i}));
+ (db.hire||[]).forEach((x,i)=>r.push({phase:'06 Hire / Plant',type:'Plant',category:x.category||'',detail:x.item||'',company:x.company||'',date:x.date||'',status:x.status||'',cost:+x.rate||0,notes:x.unit?('Rate unit: '+x.unit):'',src:'hire',idx:i}));
+ (db.costs||[]).forEach((x,i)=>r.push({phase:'07 Commercial / Costs',type:'Cost',category:x.code||'',detail:x.desc||'',company:'',date:x.date||'',status:'',cost:+x.actual||+x.committed||+x.forecast||0,notes:'Budget '+money(+x.budget||0)+' | Forecast '+money(+x.forecast||0),src:'costs',idx:i}));
+ (db.issues||[]).forEach((x,i)=>r.push({phase:'08 Site Issues & Close-out',type:'Issue',category:x.priority||'',detail:x.issue||'',company:x.owner||'',date:x.due||'',status:x.status||'',cost:0,notes:x.area||'',src:'issues',idx:i}));
+ return r;
+}
+function renderOverview(){
+ let rows=overviewRows(), dated=rows.filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date)), completed=(db.bookings||[]).filter(x=>x.completed).length, active=(db.bookings||[]).filter(x=>!x.completed).length;
+ let spend=costRows().reduce((s,x)=>s+(+x.actual||0),0), forecast=costRows().reduce((s,x)=>s+(+x.forecast||0),0);
+ document.getElementById('overviewSummary').innerHTML=[['Active Schedule',active],['Completed',completed],['Actual Cost',money(spend)],['Forecast',money(forecast)]].map(x=>'<div class="card kpi"><small>'+x[0]+'</small><b>'+x[1]+'</b></div>').join('');
+ if(!rows.length){document.getElementById('overviewSheet').innerHTML='<p>No job information entered yet.</p>';return;}
+ let phases=[...new Set(rows.map(x=>x.phase))],html='<table class="overview-sheet"><thead><tr><th>Phase</th><th>Type</th><th>Trade / Category</th><th>Scope / Item / Area</th><th>Company / Person</th><th>Date</th><th>Status</th><th>Cost / Value</th><th>Notes</th><th></th></tr></thead><tbody>';
+ phases.forEach(p=>{let a=rows.filter(x=>x.phase===p).sort((x,y)=>(x.date||'9999').localeCompare(y.date||'9999'));html+='<tr class="phase"><td colspan="10">'+p+'</td></tr>';a.forEach(x=>html+='<tr class="'+(x.done?'done':'')+'"><td>'+p.split(' ')[0]+'</td><td>'+x.type+'</td><td>'+x.category+'</td><td>'+x.detail+'</td><td>'+x.company+'</td><td>'+fmtDate(x.date)+'</td><td>'+x.status+'</td><td class="num">'+(x.cost?money(x.cost):'')+'</td><td>'+x.notes+'</td><td><button class="btn" onclick="editRow(\''+x.src+'\','+x.idx+')">Edit</button></td></tr>');html+='<tr class="phase-total"><td colspan="7">'+p+' total</td><td class="num">'+money(a.reduce((s,x)=>s+(+x.cost||0),0))+'</td><td colspan="2"></td></tr>';});
+ html+='</tbody></table>';
+ document.getElementById('overviewSheet').innerHTML=html;
+}
 function render(){
-['jobs','materials','labour','issues','daily'].forEach(t=>document.getElementById(t+'Table').innerHTML=table(t));renderTrades();renderHire();renderBookings();renderCosts();
+['jobs','materials','labour','issues','daily'].forEach(t=>document.getElementById(t+'Table').innerHTML=table(t));renderTrades();renderHire();renderBookings();renderCosts();renderOverview();
 let contract=db.jobs.reduce((s,x)=>s+(+x.contract||0),0),budget=db.costs.reduce((s,x)=>s+(+x.budget||0),0),comm=db.costs.reduce((s,x)=>s+(+x.committed||0),0),actual=db.costs.reduce((s,x)=>s+(+x.actual||0),0)+db.labour.reduce((s,x)=>s+(+x.hours||0)*(+x.rate||0),0),forecast=db.costs.reduce((s,x)=>s+(+x.forecast||0),0);
 document.getElementById('kpis').innerHTML=[['Contract',money(contract)],['Budget',money(budget)],['Committed',money(comm)],['Actual + Labour',money(actual)],['Forecast',money(forecast)],['Forecast Profit',money(contract-forecast)],['Open Issues',db.issues.filter(x=>x.status!=='Closed').length],['Material Requests',db.materials.filter(x=>x.status!=='Delivered').length]].map(x=>`<div class="card kpi"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
 document.getElementById('managementActions').innerHTML=db.issues.filter(x=>x.status!=='Closed').map(x=>`<p><span class="badge ${x.priority==='Urgent'?'urgent':''}">${x.priority}</span> ${x.issue} — <b>${x.due||''}</b></p>`).join('')||'<p>No open actions.</p>';
