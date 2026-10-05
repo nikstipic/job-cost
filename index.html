@@ -52,14 +52,14 @@ issues:[['issue','Issue'],['area','Area'],['priority','Priority'],['owner','Mana
 daily:[['date','Date','date'],['area','Area / Level'],['workers','Workers On Site','number'],['completed','Work Completed','textarea'],['tomorrow','Tomorrow / Next','textarea'],['needed','Materials / Help Needed','textarea']]
 };
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{
-jobs:[{name:'Example Apartments',client:'Example Client',contract:4800000,budget:4050000,status:'Active'}],
-costs:[{code:'03-100',desc:'Concrete',budget:420000,committed:395000,actual:270000,forecast:438000},{code:'03-200',desc:'Formwork',budget:650000,committed:540000,actual:310000,forecast:635000},{code:'03-300',desc:'Reinforcement',budget:380000,committed:360000,actual:225000,forecast:402000}],
-materials:[{item:'17mm Formply',qty:120,unit:'sheets',needed:'2026-10-08',area:'Level 3 Deck',supplier:'',cost:0,status:'Requested'}],
-trades:[{trade:'Reinforcement',company:'Example Steel Pty Ltd',budget:380000,agreed:360000,paid:225000,status:'Active'}],
-labour:[{worker:'Site Crew',trade:'Formwork',date:'2026-10-05',hours:80,rate:55,area:'Level 3'}],
-bookings:[{type:'Concrete Pump',details:'Level 3 slab pour',date:'2026-10-08',time:'06:30',supplier:'TBC',status:'Needs confirmation'}],
-issues:[{issue:'Confirm pump and concrete booking',area:'Level 3',priority:'Urgent',owner:'Management',due:'2026-10-06',status:'Open'}],
-daily:[{date:'2026-10-05',area:'Level 3',workers:10,completed:'Deck shutters progressing','tomorrow':'Finish deck and start penetrations',needed:'120 sheets formply'}]
+jobs:[],
+costs:[],
+materials:[],
+trades:[],
+labour:[],
+bookings:[],
+issues:[],
+daily:[]
 };
 const pages=['dashboard','jobs','costs','materials','trades','labour','bookings','issues','daily'];
 const labels={dashboard:'Dashboard',jobs:'Jobs',costs:'Costs',materials:'Materials',trades:'Trades',labour:'Labour',bookings:'Bookings',issues:'Issues',daily:'Site Supervisor Daily'};
