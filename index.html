@@ -612,22 +612,30 @@ function programmeShiftDependents(id,days,seen=new Set()){
 }
 function programmeMoveActivity(id,targetDate,sourceDate){
  let a=programmeActivities().find(x=>x.id===id);if(!a)return;
- let days=programmeDayDiff(sourceDate,targetDate);if(!days)return;
- programmeShiftActivity(a,days);
- let deps=programmeDependentsOf(id);
- if(deps.length&&confirm(a.name+' moved '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+' '+(days>0?'later':'earlier')+'.\n\nMove '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+' by the same amount?'))programmeShiftDependents(id,days);
- persist()
+ let oldDates=programmeActivityDates(a),anchor=oldDates[0]||a.plannedStart;
+ let days=programmeDayDiff(anchor,targetDate);if(!days)return;
+ let draft=JSON.parse(JSON.stringify(a));programmeShiftActivity(draft,days);
+ let newDates=programmeActivityDates(draft);
+ let oldRange=fmtDate(a.plannedStart)+' → '+fmtDate(a.plannedFinish),newRange=fmtDate(draft.plannedStart)+' → '+fmtDate(draft.plannedFinish);
+ let msg='Move '+a.name+'?\n\nCurrent: '+oldRange+'\nNew: '+newRange+'\n\nAll '+oldDates.length+' booked day'+(oldDates.length===1?'':'s')+' will move together. Nothing will be changed unless you confirm.';
+ if(!confirm(msg))return;
+ let deps=programmeDependentsOf(id),moveDeps=false;
+ if(deps.length)moveDeps=confirm('This activity has '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+'.\n\nMove the dependent activities by the same '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+'?');
+ Object.assign(a,draft);if(moveDeps)programmeShiftDependents(id,days);persist()
 }
 function programmeResizeActivity(id,targetDate,edge){
  let a=programmeActivities().find(x=>x.id===id);if(!a)return;
- let old=edge==='start'?a.plannedStart:a.plannedFinish;
- if(edge==='start'&&targetDate>a.plannedFinish)targetDate=a.plannedFinish;
- if(edge==='end'&&targetDate<a.plannedStart)targetDate=a.plannedStart;
+ let draft=JSON.parse(JSON.stringify(a)),old=edge==='start'?draft.plannedStart:draft.plannedFinish;
+ if(edge==='start'&&targetDate>draft.plannedFinish)targetDate=draft.plannedFinish;
+ if(edge==='end'&&targetDate<draft.plannedStart)targetDate=draft.plannedStart;
  if(targetDate===old)return;
- a[edge==='start'?'plannedStart':'plannedFinish']=targetDate;
- let days=programmeDayDiff(old,targetDate),deps=programmeDependentsOf(id);
- if(edge==='end'&&days&&deps.length&&confirm(a.name+' finish changed by '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+'.\n\nMove '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+' by the same amount?'))programmeShiftDependents(id,days);
- persist()
+ draft[edge==='start'?'plannedStart':'plannedFinish']=targetDate;
+ let oldDates=programmeActivityDates(a),newDates=programmeActivityDates(draft),days=programmeDayDiff(old,targetDate);
+ let msg='Change '+a.name+' '+(edge==='start'?'start':'finish')+' date?\n\nCurrent: '+fmtDate(a.plannedStart)+' → '+fmtDate(a.plannedFinish)+'\nNew: '+fmtDate(draft.plannedStart)+' → '+fmtDate(draft.plannedFinish)+'\n\nBooked days: '+oldDates.length+' → '+newDates.length+'. Nothing will be changed unless you confirm.';
+ if(!confirm(msg))return;
+ let deps=programmeDependentsOf(id),moveDeps=false;
+ if(edge==='end'&&days&&deps.length)moveDeps=confirm('This activity has '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+'.\n\nMove the dependent activities by the same '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+'?');
+ Object.assign(a,draft);if(moveDeps)programmeShiftDependents(id,days);persist()
 }
 let programmeDrag=null;
 function programmeCellAtPoint(x,y){
@@ -637,7 +645,8 @@ function programmeCellAtPoint(x,y){
 function programmePointerDown(e,id,date,edge){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDrag={id,date,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:date};
+ let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
+ programmeDrag={id,date:anchor,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:anchor};
  bar.classList.add('programme-dragging');
  document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);
