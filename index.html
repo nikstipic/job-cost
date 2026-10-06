@@ -403,8 +403,8 @@ let db=workspaceStore.items[workspaceStore.active].data||blankWorkspace();
 if(!Array.isArray(db.programmeActivities))db.programmeActivities=[];if(!Array.isArray(db.siteSnapshots))db.siteSnapshots=[];
 function saveWorkspaceStore(){let w=workspaceStore.items[workspaceStore.active];if(w){w.data=db;let n=db.jobs&&db.jobs[0]&&db.jobs[0].name;if(n)w.name=n;w.cloudCode=cloudCode||''}localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db))}
 function renderWorkspaceSwitcher(){let s=document.getElementById('jobWorkspaceSelect');if(!s)return;s.innerHTML=Object.entries(workspaceStore.items).map(([id,w])=>'<option value="'+id+'" '+(id===workspaceStore.active?'selected':'')+'>'+((w.name||'Untitled Job'))+'</option>').join('')}
-function switchWorkspace(id){if(!workspaceStore.items[id]||id===workspaceStore.active)return;saveWorkspaceStore();workspaceStore.active=id;db=workspaceStore.items[id].data||blankWorkspace();cloudCode=workspaceStore.items[id].cloudCode||'';localStorage.setItem('managementCloudCode',cloudCode);localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();startCloud()}
-function createWorkspace(){let name=prompt('New job name');if(!name||!name.trim())return;saveWorkspaceStore();let id='job-'+Date.now();workspaceStore.items[id]={name:name.trim(),data:blankWorkspace(),cloudCode:''};workspaceStore.active=id;db=workspaceStore.items[id].data;cloudCode='';localStorage.removeItem('managementCloudCode');localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();startCloud();showMain('job',document.querySelector('#nav button:nth-child(2)'));setTimeout(()=>{activatePage('jobs');renderSubnav('job','jobs');renderJobSetup()},0)}
+function switchWorkspace(id){if(!workspaceStore.items[id]||id===workspaceStore.active)return;saveWorkspaceStore();workspaceStore.active=id;db=workspaceStore.items[id].data||blankWorkspace();cloudCode=workspaceStore.items[id].cloudCode||'';localStorage.setItem('managementCloudCode',cloudCode);localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();scheduleCloudStart()}
+function createWorkspace(){let name=prompt('New job name');if(!name||!name.trim())return;saveWorkspaceStore();let id='job-'+Date.now();workspaceStore.items[id]={name:name.trim(),data:blankWorkspace(),cloudCode:''};workspaceStore.active=id;db=workspaceStore.items[id].data;cloudCode='';localStorage.removeItem('managementCloudCode');localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();scheduleCloudStart();showMain('job',document.querySelector('#nav button:nth-child(2)'));setTimeout(()=>{activatePage('jobs');renderSubnav('job','jobs');renderJobSetup()},0)}
 
 
 const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
@@ -413,6 +413,10 @@ let sb=null;try{if(window.supabase&&typeof window.supabase.createClient==='funct
 let cloudCode=(workspaceStore.items[workspaceStore.active]&&workspaceStore.items[workspaceStore.active].cloudCode)||localStorage.getItem('managementCloudCode')||'';
 let siteSnapshotDirty=false;
 let cloudBusy=false,cloudTimer=null,lastCloudJson='';
+let cloudStartTimer=null,cloudPushTimer=null,appReady=false;
+function scheduleCloudStart(){if(!appReady||!cloudCode||!sb)return;if(cloudStartTimer)clearTimeout(cloudStartTimer);cloudStartTimer=setTimeout(()=>{try{startCloud()}catch(e){console.warn('Cloud start skipped',e)}},1200)}
+function scheduleCloudPush(){if(!appReady||!cloudCode||!sb)return;if(cloudPushTimer)clearTimeout(cloudPushTimer);cloudPushTimer=setTimeout(()=>{try{pushCloud()}catch(e){console.warn('Cloud save skipped',e)}},800)}
+
 function normalCode(v){return (v||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim()}
 function newJobCode(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='MGT-';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s}
 function setCloudState(msg){let e=document.getElementById('cloudState');if(e)e.textContent=msg}
@@ -437,8 +441,8 @@ async function pushCloud(){
  cloudBusy=false;
 }
 async function pullCloud(){
- if(!sb||!cloudCode||cloudBusy)return;if(siteSnapshotDirty){pushCloud();return}cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
- if(!error&&data){let remote=JSON.stringify(data);if(remote!==lastCloudJson){db=data;localStorage.setItem('mmdb',remote);lastCloudJson=remote;render()}setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');cloudBusy=false;
+ if(!sb||!cloudCode||cloudBusy||!appReady)return;if(siteSnapshotDirty){scheduleCloudPush();return}cloudBusy=true;
+ try{let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});if(!error&&data){let remote=JSON.stringify(data);if(!lastCloudJson)lastCloudJson=JSON.stringify(db);if(remote!==lastCloudJson){setCloudState('— Cloud update available '+cloudCode)}else setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error')}catch(e){console.warn('Cloud pull failed',e);setCloudState('— Sync unavailable')}finally{cloudBusy=false}
 }
 function startCloud(){saveWorkspaceStore();if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}if(!sb){setCloudState('— Sync unavailable');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
 
@@ -476,7 +480,7 @@ const directoryPages=[['directoryTrades','Trades'],['directoryLabour','Labour'],
 const labels={dashboard:'Dashboard',myday:'My Day',price:'Pricing',build:'Build',money:'Money',directory:'Directory',pricing:'Pricing Overview',overview:'Build Overview',estimating:'Estimating',jobs:'Job Setup',costs:'Budget / Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Programme',issues:'Issues',signin:'Site Sign-In',daily:'Site Diary',claims:'Progress Claim'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
-function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();pushCloud()}
+function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();scheduleCloudPush()}
 function currentRole(){return document.getElementById('role')?.value||'Management'}
 function nav(){
   let supervisor=currentRole()==='Site Supervisor',navPages=supervisor?['myday','build']:pages,el=document.getElementById('nav');
@@ -1205,5 +1209,5 @@ document.getElementById('role').addEventListener('change',e=>{
   else{activatePage('myday');renderSubnav('');document.querySelectorAll('#nav button').forEach((x,i)=>x.classList.toggle('active',i===0))}
   renderMyDay();
 });
-repairIntegrity();nav();renderWorkspaceSwitcher();render();startCloud();
+repairIntegrity();nav();renderWorkspaceSwitcher();render();appReady=true;setCloudState(cloudCode?'— Shared '+cloudCode:'— This device only');
 </script></body></html>
