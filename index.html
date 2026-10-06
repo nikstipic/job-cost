@@ -426,9 +426,9 @@ function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currenc
 function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();pushCloud()}
 function currentRole(){return document.getElementById('role')?.value||'Management'}
 function nav(){
-  let supervisor=currentRole()==='Site Supervisor',navPages=supervisor?['build']:pages,el=document.getElementById('nav');
+  let supervisor=currentRole()==='Site Supervisor',navPages=supervisor?['myday','build']:pages,el=document.getElementById('nav');
   el.innerHTML=navPages.map((p,i)=>`<button class="${i===0?'active':''}" onclick="showMain('${p}',this)">${supervisor&&p==='build'?'Site':labels[p]}</button>`).join('');
-  if(supervisor){activatePage('bookings');renderSubnav('build','bookings')}else renderSubnav('')
+  if(supervisor){activatePage('myday');renderSubnav('')}else renderSubnav('')
 }
 function activatePage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));let el=document.getElementById(p);if(el)el.classList.add('active')}
 function renderSubnav(group,active){let el=document.getElementById('subnav'),items=group==='price'?pricePages:group==='build'?buildPages:group==='money'?moneyPages:group==='people'?peoplePages:[];if(!items.length){el.className='subnav';el.innerHTML='';return}el.className='subnav show';el.innerHTML=items.map((x,i)=>`<button class="${(active?x[0]===active:i===0)?'active':''}" onclick="showSub('${group}','${x[0]}',this)">${x[1]}</button>`).join('')}
@@ -1103,7 +1103,7 @@ document.getElementById('role').addEventListener('change',e=>{
   let supervisor=e.target.value==='Site Supervisor';
   document.querySelectorAll('.management').forEach(x=>x.style.opacity=supervisor?.55:1);
   nav();
-  if(supervisor){activatePage('bookings');renderSubnav('build','bookings')}
+  if(supervisor){activatePage('myday');renderSubnav('');document.querySelectorAll('#nav button').forEach((x,i)=>x.classList.toggle('active',i===0))}
   else{activatePage('myday');renderSubnav('');document.querySelectorAll('#nav button').forEach((x,i)=>x.classList.toggle('active',i===0))}
 });
 repairIntegrity();nav();renderWorkspaceSwitcher();render();startCloud();
