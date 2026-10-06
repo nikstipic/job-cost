@@ -390,18 +390,24 @@ if(localStorage.getItem('managementDataVersion')!==CLEAN_SLATE_VERSION){
   localStorage.setItem('managementDataVersion',CLEAN_SLATE_VERSION);
 }
 function blankWorkspace(){return {jobs:[],costs:[],materials:[],trades:[],labour:[],bookings:[],issues:[],daily:[],hire:[],claims:[],tasks:[],estimates:[],stock:[],estimateGeneralMaterials:[],pricingExtras:[],programmeActivities:[],siteSnapshots:[]}}
-let workspaceStore=JSON.parse(localStorage.getItem('managementWorkspaces')||'null');
-if(!workspaceStore){
- let existing=JSON.parse(localStorage.getItem('mmdb')||'null')||blankWorkspace();
+function safeStoredJson(key,fallback=null){try{let raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){console.warn('Ignoring invalid saved '+key,e);return fallback}}
+let workspaceStore=safeStoredJson('managementWorkspaces',null);
+if(!workspaceStore||typeof workspaceStore!=='object'||!workspaceStore.items||typeof workspaceStore.items!=='object'||Array.isArray(workspaceStore.items)){
+ let existing=safeStoredJson('mmdb',null)||blankWorkspace();
  let existingName=(existing.jobs&&existing.jobs[0]&&existing.jobs[0].name)||'Bomaderry';
  let id='job-'+Date.now();
  workspaceStore={active:id,items:{}};workspaceStore.items[id]={name:existingName,data:existing,cloudCode:localStorage.getItem('managementCloudCode')||''};
- localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));
+ try{localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore))}catch(e){console.warn('Could not repair workspace storage',e)}
 }
-if(!workspaceStore.items[workspaceStore.active])workspaceStore.active=Object.keys(workspaceStore.items)[0];
-let db=workspaceStore.items[workspaceStore.active].data||blankWorkspace();
+let workspaceIds=Object.keys(workspaceStore.items);
+if(!workspaceIds.length){
+ let id='job-'+Date.now();workspaceStore.items[id]={name:'Bomaderry',data:blankWorkspace(),cloudCode:''};workspaceStore.active=id;workspaceIds=[id]
+}
+if(!workspaceStore.active||!workspaceStore.items[workspaceStore.active])workspaceStore.active=workspaceIds[0];
+let activeWorkspace=workspaceStore.items[workspaceStore.active]||{};
+let db=(activeWorkspace.data&&typeof activeWorkspace.data==='object')?activeWorkspace.data:blankWorkspace();
 if(!Array.isArray(db.programmeActivities))db.programmeActivities=[];if(!Array.isArray(db.siteSnapshots))db.siteSnapshots=[];
-function saveWorkspaceStore(){let w=workspaceStore.items[workspaceStore.active];if(w){w.data=db;let n=db.jobs&&db.jobs[0]&&db.jobs[0].name;if(n)w.name=n;w.cloudCode=cloudCode||''}localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db))}
+function saveWorkspaceStore(){let w=workspaceStore.items[workspaceStore.active];if(w){w.data=db;let n=db.jobs&&db.jobs[0]&&db.jobs[0].name;if(n)w.name=n;w.cloudCode=cloudCode||''}try{localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db))}catch(e){console.warn('Local save failed',e)}}
 function renderWorkspaceSwitcher(){let s=document.getElementById('jobWorkspaceSelect');if(!s)return;s.innerHTML=Object.entries(workspaceStore.items).map(([id,w])=>'<option value="'+id+'" '+(id===workspaceStore.active?'selected':'')+'>'+((w.name||'Untitled Job'))+'</option>').join('')}
 function switchWorkspace(id){if(!workspaceStore.items[id]||id===workspaceStore.active)return;saveWorkspaceStore();workspaceStore.active=id;db=workspaceStore.items[id].data||blankWorkspace();cloudCode=workspaceStore.items[id].cloudCode||'';localStorage.setItem('managementCloudCode',cloudCode);localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();scheduleCloudStart()}
 function createWorkspace(){let name=prompt('New job name');if(!name||!name.trim())return;saveWorkspaceStore();let id='job-'+Date.now();workspaceStore.items[id]={name:name.trim(),data:blankWorkspace(),cloudCode:''};workspaceStore.active=id;db=workspaceStore.items[id].data;cloudCode='';localStorage.removeItem('managementCloudCode');localStorage.setItem('managementWorkspaces',JSON.stringify(workspaceStore));localStorage.setItem('mmdb',JSON.stringify(db));renderWorkspaceSwitcher();render();scheduleCloudStart();showMain('job',document.querySelector('#nav button:nth-child(2)'));setTimeout(()=>{activatePage('jobs');renderSubnav('job','jobs');renderJobSetup()},0)}
