@@ -630,8 +630,8 @@ function programmeActivityGroups(){
    completed=dates.slice(0,doneCount);
    groups.push({source:'activity',activityId:a.id,group:a.stage||'Activity',owner:a.name||'Programme Activity',category:a.responsible||'',details:[state.label,pct+'%'].join(' • '),dates,completed,status:state.label,performance:programmeActivityPerformance(a)})
  });
- let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+owner+'|'+(b.category||'')+'|'+(b.details||'');if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',dates:[],completed:[]};m[key].dates.push(b.date);if(b.completed||b.status==='Completed')m[key].completed.push(b.date)});
- groups.push(...Object.values(m).map(g=>({...g,dates:[...new Set(g.dates)].sort(),completed:[...new Set(g.completed)]})));
+ let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+String(owner||'').trim().toLowerCase();if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',categories:[],detailsList:[],dates:[],completed:[]};if(b.category&&!m[key].categories.includes(b.category))m[key].categories.push(b.category);if(b.details&&!m[key].detailsList.includes(b.details))m[key].detailsList.push(b.details);m[key].dates.push(b.date);if(b.completed||b.status==='Completed')m[key].completed.push(b.date)});
+ groups.push(...Object.values(m).map(g=>({...g,category:g.categories.join(' / '),details:g.detailsList.join(' • '),dates:[...new Set(g.dates)].sort(),completed:[...new Set(g.completed)]})));
  (db.programmeMilestones||[]).forEach(m=>{if(m.date)groups.push({source:'milestone',milestoneId:m.id,group:m.stage||'Milestone',owner:m.name||'Milestone',category:m.responsible||'',details:'Milestone',dates:[m.date],completed:[],status:'Milestone'})});
  return groups.sort((a,b)=>(a.dates[0]||'').localeCompare(b.dates[0]||''))
 }
