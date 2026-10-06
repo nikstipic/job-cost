@@ -378,6 +378,62 @@ nav button.active,.subnav button.active{background:#16263d!important;color:#fff!
  .programme-controls{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;width:100%}
  .programme-controls>*{width:100%!important;min-width:0!important}
 }
+
+/* Mobile usability pass 2: navigation, lists, filters and site tables */
+@media(max-width:700px){
+ html{-webkit-text-size-adjust:100%;scroll-padding-top:52px}
+ button,.btn,.primary,select{touch-action:manipulation}
+ .subnav{scrollbar-width:none}.subnav::-webkit-scrollbar{display:none}
+ .subnav.show:after{content:'';flex:0 0 6px}
+ .booking-filters{display:flex!important;overflow-x:auto!important;gap:6px!important;padding-bottom:2px;scrollbar-width:none}
+ .booking-filters::-webkit-scrollbar{display:none}
+ .booking-filters .btn{flex:0 0 auto!important;width:auto!important;min-height:36px!important;padding:7px 10px!important}
+ .section>.toolbar>div:first-child h2{font-size:16px!important;margin-bottom:1px!important}
+ .section>.toolbar>div:first-child .lead{font-size:11px!important;line-height:1.25}
+ .section>.toolbar:has(>div:first-child)>button{width:100%!important}
+ .person-head{display:flex!important;align-items:flex-start!important;gap:8px!important}
+ .person-head>div:first-child{min-width:0;flex:1}
+ .person-head>span{flex:0 0 auto;margin-top:0!important;font-size:10px!important;padding:5px 7px!important}
+ .person-sub{white-space:normal!important;overflow-wrap:anywhere;line-height:1.35}
+ .person-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;margin-top:9px!important}
+ .person-actions button{font-size:11px!important;padding:7px 5px!important}
+ .person-actions button:first-child:nth-last-child(3),
+ .person-actions button:first-child:nth-last-child(3)~button{grid-column:auto}
+ .trade-separation{font-size:11px!important;padding:7px 8px!important}
+ #issues .person-actions,#materials .person-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #issues .person-actions button:first-child,#materials .person-actions button:first-child{grid-column:1/-1}
+ #directoryTrades .person-card,#directoryLabour .person-card,#directoryHire .person-card{padding:10px!important}
+ #directoryTrades .person-actions,#directoryLabour .person-actions,#directoryHire .person-actions{grid-template-columns:1fr 1fr!important}
+ #costSummary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #costCategorySummary .person-head button{width:auto!important;min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
+ #costCategorySummary .person-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #siteSnapshotTable,#siteSnapshotTable table{min-width:0!important;width:100%!important}
+ #siteSnapshotTable table{table-layout:fixed;font-size:11px!important}
+ #siteSnapshotTable th,#siteSnapshotTable td{padding:4px 2px!important}
+ #siteSnapshotTable th:nth-child(1),#siteSnapshotTable td:nth-child(1){width:24px}
+ #siteSnapshotTable th:nth-child(2),#siteSnapshotTable td:nth-child(2){width:38px}
+ #siteSnapshotTable th:nth-child(4),#siteSnapshotTable td:nth-child(4),
+ #siteSnapshotTable th:nth-child(5),#siteSnapshotTable td:nth-child(5){display:none}
+ #siteSnapshotTable th:nth-child(7),#siteSnapshotTable td:nth-child(7),
+ #siteSnapshotTable th:nth-child(8),#siteSnapshotTable td:nth-child(8){width:48px}
+ #siteSnapshotTable th:last-child,#siteSnapshotTable td:last-child{width:34px}
+ #siteSnapshotTable input{min-height:36px!important;height:36px!important;padding:4px!important;font-size:12px!important}
+ #siteSnapshotTable .snapshot-remove button{min-height:34px!important;width:30px!important;padding:2px!important}
+ #constructionProgramme{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .programme-section{padding:8px!important}
+ .programme-section>.toolbar{display:block!important}
+ .programme-controls{margin-top:8px}
+ .programme-controls select{font-size:11px!important;min-height:38px!important}
+ .programme-controls button{font-size:11px!important;min-height:38px!important;padding:6px!important}
+ .programme-expand-btn{display:none!important}
+ .overview-item{padding:8px 0!important}
+ .overview-item-title{font-size:13px!important}
+ .overview-item-sub{font-size:11px!important}
+ .trade-detail-row{padding:8px 0!important;gap:8px!important}
+ .trade-detail-date{font-size:10px!important}
+ .trade-detail-actions{grid-template-columns:1fr 1fr!important}
+ textarea{min-height:90px}
+}
 </style>
 </head>
 <body>
