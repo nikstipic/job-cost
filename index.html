@@ -612,6 +612,7 @@ function programmeShiftDependents(id,days,seen=new Set()){
 }
 function programmeMoveActivity(id,targetDate,sourceDate){
  let a=programmeActivities().find(x=>x.id===id);if(!a)return;
+ if(a.actualStart&&!confirm(a.name+' has already started on '+fmtDate(a.actualStart)+'.\n\nDragging it will revise the planned programme dates. Actual dates will stay unchanged.\n\nContinue?'))return;
  let oldDates=programmeActivityDates(a),anchor=oldDates[0]||a.plannedStart;
  let days=programmeDayDiff(anchor,targetDate);if(!days)return;
  let draft=JSON.parse(JSON.stringify(a));programmeShiftActivity(draft,days);
@@ -625,6 +626,7 @@ function programmeMoveActivity(id,targetDate,sourceDate){
 }
 function programmeResizeActivity(id,targetDate,edge){
  let a=programmeActivities().find(x=>x.id===id);if(!a)return;
+ if(a.actualStart&&!confirm(a.name+' has already started on '+fmtDate(a.actualStart)+'.\n\nResizing it will revise the planned programme dates. Actual dates will stay unchanged.\n\nContinue?'))return;
  let draft=JSON.parse(JSON.stringify(a)),old=edge==='start'?draft.plannedStart:draft.plannedFinish;
  if(edge==='start'&&targetDate>draft.plannedFinish)targetDate=draft.plannedFinish;
  if(edge==='end'&&targetDate<draft.plannedStart)targetDate=draft.plannedStart;
@@ -685,11 +687,22 @@ function openProgrammeActivity(i=null){
 }
 function saveProgrammeActivity(e){
  e.preventDefault();let f=e.target,fd=new FormData(f),o=Object.fromEntries(fd.entries());o.workDays=fd.getAll('workDays');o.excludedDates=String(o.excludedDates||'').split(',').map(x=>x.trim()).filter(Boolean);if(!o.workDays.length){alert('Select at least one working day.');return}o.progress=Math.max(0,Math.min(100,+o.progress||0));o.id=editingProgrammeActivity===null?'pa-'+Date.now():programmeActivities()[editingProgrammeActivity].id;
+ let existing=editingProgrammeActivity===null?null:programmeActivities()[editingProgrammeActivity],today=new Date().toLocaleDateString('en-CA');
+ if(o.status==='In Progress'&&!o.actualStart&&!existing?.actualStart&&confirm('Set Actual Start to today ('+fmtDate(today)+')?'))o.actualStart=today;
+ if((o.status==='Complete'||o.progress>=100)&&!o.actualFinish&&!existing?.actualFinish&&confirm('Set Actual Finish to today ('+fmtDate(today)+')?'))o.actualFinish=today;
  if(o.actualFinish||o.progress>=100){o.status='Complete';o.progress=100}
  if(editingProgrammeActivity===null)programmeActivities().push(o);else programmeActivities()[editingProgrammeActivity]=o;
  document.getElementById('programmeActivityDlg').close();persist()
 }
 function deleteProgrammeActivity(i){if(!confirm('Delete this programme activity? Resource bookings will not be deleted.'))return;programmeActivities().splice(i,1);persist()}
+function programmeActivityPerformance(a){
+ if(!a||!a.plannedStart||!a.plannedFinish)return {label:'—',cls:'',detail:''};
+ let today=new Date().toLocaleDateString('en-CA'),startDiff=a.actualStart?programmeDayDiff(a.plannedStart,a.actualStart):null,finishDiff=a.actualFinish?programmeDayDiff(a.plannedFinish,a.actualFinish):null;
+ if(a.actualFinish){let d=finishDiff||0;return {label:d>0?d+'d behind':d<0?Math.abs(d)+'d ahead':'On programme',cls:d>0?'status-owing':d<0?'status-paid':'status-booked',detail:'Finished '+(d>0?d+' day'+(d===1?'':'s')+' late':d<0?Math.abs(d)+' day'+(Math.abs(d)===1?'':'s')+' early':'on planned finish')}}
+ if(a.actualStart){let d=startDiff||0,current=a.plannedFinish<today?programmeDayDiff(a.plannedFinish,today):0;if(current>0)return {label:current+'d behind',cls:'status-owing',detail:'In progress past planned finish'};return {label:d>0?'Started '+d+'d late':d<0?'Started '+Math.abs(d)+'d early':'Started on time',cls:d>0?'status-owing':d<0?'status-paid':'status-booked',detail:''}}
+ if(a.plannedStart<today){let d=programmeDayDiff(a.plannedStart,today);return {label:d+'d late to start',cls:'status-owing',detail:'Not started'};}
+ return {label:'On programme',cls:'status-booked',detail:'Not started yet'}
+}
 function programmeActivityState(a){
  let today=new Date().toLocaleDateString('en-CA'),dep=programmeActivities().find(x=>x.id===a.dependency),status=a.status||'Not Started';
  if(status==='Complete'||a.progress>=100)return {label:'Complete',cls:'status-paid'};
@@ -703,7 +716,7 @@ function renderProgrammeActivities(){
  let out=document.getElementById('programmeActivities');if(!out)return;let all=programmeActivities(),today=new Date().toLocaleDateString('en-CA'),states=all.map(programmeActivityState),complete=states.filter(x=>x.label==='Complete').length,inProgress=states.filter(x=>x.label==='In Progress').length,delayed=states.filter(x=>x.label==='Delayed'||x.label==='Blocked').length,soon=all.filter((x,i)=>states[i].label==='Not Started'&&x.plannedStart>=today).length;
  if(!all.length){out.innerHTML='<p class="lead">No programme activities yet. Add the main construction stages in the order you plan to build them.</p>';return}
  let sorted=all.map((x,i)=>({x,i})).sort((a,b)=>(a.x.plannedStart||'9999').localeCompare(b.x.plannedStart||'9999'));
- out.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Activity</th><th>Planned</th><th>Actual</th><th>Responsible</th><th>Progress</th><th>Status</th><th>Depends On</th><th></th></tr></thead><tbody>'+sorted.map(({x,i})=>{let st=programmeActivityState(x),dep=all.find(d=>d.id===x.dependency);return '<tr><td><b>'+x.name+'</b>'+(x.stage?'<div class="overview-item-sub">'+x.stage+'</div>':'')+'</td><td>'+fmtDate(x.plannedStart)+' → '+fmtDate(x.plannedFinish)+'</td><td>'+(x.actualStart?fmtDate(x.actualStart):'—')+(x.actualFinish?' → '+fmtDate(x.actualFinish):'')+'</td><td>'+(x.responsible||'—')+'</td><td><b>'+x.progress+'%</b></td><td><span class="'+st.cls+'">'+st.label+'</span></td><td>'+(dep?dep.name:'—')+'</td><td><button class="btn" onclick="openProgrammeActivity('+i+')">Open</button> <button class="btn red" onclick="deleteProgrammeActivity('+i+')">Delete</button></td></tr>'}).join('')+'</tbody></table></div>'
+ out.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>Activity</th><th>Planned</th><th>Actual</th><th>Responsible</th><th>Progress</th><th>Status</th><th>Programme</th><th>Depends On</th><th></th></tr></thead><tbody>'+sorted.map(({x,i})=>{let st=programmeActivityState(x),perf=programmeActivityPerformance(x),dep=all.find(d=>d.id===x.dependency);return '<tr><td><b>'+x.name+'</b>'+(x.stage?'<div class="overview-item-sub">'+x.stage+'</div>':'')+'</td><td>'+fmtDate(x.plannedStart)+' → '+fmtDate(x.plannedFinish)+'</td><td>'+(x.actualStart?fmtDate(x.actualStart):'—')+(x.actualFinish?' → '+fmtDate(x.actualFinish):'')+'</td><td>'+(x.responsible||'—')+'</td><td><b>'+x.progress+'%</b></td><td><span class="'+st.cls+'">'+st.label+'</span></td><td><span class="'+perf.cls+'">'+perf.label+'</span>'+(perf.detail?'<div class="overview-item-sub">'+perf.detail+'</div>':'')+'</td><td>'+(dep?dep.name:'—')+'</td><td><button class="btn" onclick="openProgrammeActivity('+i+')">Open</button> <button class="btn red" onclick="deleteProgrammeActivity('+i+')">Delete</button></td></tr>'}).join('')+'</tbody></table></div>'
 }
 function renderBookings(){renderProgrammeActivities();renderConstructionProgramme();let w=bookingWindow(bookingFilter),active=(db.bookings||[]).filter(x=>!x.completed&&x.status!=='Completed'&&x.date>=w[0]&&x.date<=w[1]),groups=programmeGroups(active),allActiveGroups=programmeGroups((db.bookings||[]).filter(x=>!x.completed&&x.status!=='Completed')),completed=(db.bookings||[]).filter(x=>x.completed||x.status==='Completed'),completedGroups=programmeGroups(completed);let days=[...new Set(active.map(x=>x.date).filter(Boolean))].length;document.getElementById('bookingActiveHeading').textContent=w[2];document.getElementById('bookingSummary').innerHTML=[['People / Trades',groups.length],['Booked Days',days],['All Active',allActiveGroups.length]].map(x=>'<div class="card kpi"><small>'+x[0]+'</small><b>'+x[1]+'</b></div>').join('');document.getElementById('bookingsTable').innerHTML=groups.length?groups.map((g,i)=>programmeCard(g,i,'prog',false)).join(''):'<p class="lead">Nothing booked for this period.</p>';document.getElementById('completedBookingsTable').innerHTML=completedGroups.length?completedGroups.map((g,i)=>programmeCard(g,i,'doneprog',true)).join(''):'<p class="lead">No completed bookings yet.</p>'}
 function costRows(){
