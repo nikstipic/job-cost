@@ -831,8 +831,10 @@ function openProgrammeActivity(i=null){
 function saveProgrammeActivity(e){
  e.preventDefault();let f=e.target,fd=new FormData(f),o=Object.fromEntries(fd.entries());o.workDays=fd.getAll('workDays');o.excludedDates=String(o.excludedDates||'').split(',').map(x=>x.trim()).filter(Boolean);if(!o.workDays.length){alert('Select at least one working day.');return}o.progress=Math.max(0,Math.min(100,+o.progress||0));o.id=editingProgrammeActivity===null?'pa-'+Date.now():programmeActivities()[editingProgrammeActivity].id;
  let existing=editingProgrammeActivity===null?null:programmeActivities()[editingProgrammeActivity],today=new Date().toLocaleDateString('en-CA');
- if(o.status==='In Progress'&&!o.actualStart&&!existing?.actualStart&&confirm('Set Actual Start to today ('+fmtDate(today)+')?'))o.actualStart=today;
- if((o.status==='Complete'||o.progress>=100)&&!o.actualFinish&&!existing?.actualFinish&&confirm('Set Actual Finish to today ('+fmtDate(today)+')?'))o.actualFinish=today;
+ let startingNow=o.status==='In Progress'&&existing?.status!=='In Progress'&&!(+existing?.progress>0)&&!existing?.actualStart,
+     completingNow=(o.status==='Complete'||o.progress>=100)&&existing?.status!=='Complete'&&!(+existing?.progress>=100)&&!existing?.actualFinish;
+ if(startingNow&&!o.actualStart&&confirm('Set Actual Start to today ('+fmtDate(today)+')?'))o.actualStart=today;
+ if(completingNow&&!o.actualFinish&&confirm('Set Actual Finish to today ('+fmtDate(today)+')?'))o.actualFinish=today;
  if(o.actualFinish||o.progress>=100){o.status='Complete';o.progress=100}
  if(editingProgrammeActivity===null)programmeActivities().push(o);else programmeActivities()[editingProgrammeActivity]=o;
  document.getElementById('programmeActivityDlg').close();persist()
