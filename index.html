@@ -955,14 +955,14 @@ function programmeMoveMilestone(id,targetDate){
 }
 function programmeMilestonePointerDown(e,id,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
- let diamond=e.currentTarget;programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date};
+ let diamond=e.currentTarget;programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date,startX:e.clientX,startY:e.clientY,moved:false};
  diamond.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
 function programmeBookingPointerDown(e,key,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.map(b=>b.date))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDrag={bookingKey:key,date:dates[0]||date,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:dates[0]||date};
+ programmeDrag={bookingKey:key,date:dates[0]||date,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:dates[0]||date,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
@@ -970,7 +970,7 @@ function programmePointerDown(e,id,date,edge){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
  let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
- programmeDrag={id,date:anchor,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:anchor};
+ programmeDrag={id,date:anchor,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:anchor,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');
  document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);
@@ -979,6 +979,7 @@ function programmePointerDown(e,id,date,edge){
 }
 function programmePointerMove(e){
  if(!programmeDrag||e.pointerId!==programmeDrag.pointerId)return;
+ if(Math.abs(e.clientX-programmeDrag.startX)>6||Math.abs(e.clientY-programmeDrag.startY)>6)programmeDrag.moved=true;
  let date=programmeCellAtPoint(e.clientX,e.clientY);if(date)programmeDrag.lastDate=date
 }
 function programmeFinishDrag(e,apply){
@@ -993,7 +994,7 @@ function programmeFinishDrag(e,apply){
  if(!target)return;
  if(x.edge==='booking-move')programmeMoveBookingGroup(x.bookingKey,target);else if(x.edge==='milestone-move')programmeMoveMilestone(x.milestoneId,target);else if(x.edge==='move')programmeMoveActivity(x.id,target,x.date);else programmeResizeActivity(x.id,target,x.edge)
 }
-function programmePointerRelease(e){if(programmeDrag&&e.pointerId===programmeDrag.pointerId){e.preventDefault();e.stopPropagation();programmeFinishDrag(e,true)}}
+function programmePointerRelease(e){if(programmeDrag&&e.pointerId===programmeDrag.pointerId){e.preventDefault();e.stopPropagation();let x=programmeDrag;if(!x.moved){let date=programmeCellAtPoint(e.clientX,e.clientY)||x.lastDate;programmeFinishDrag(e,false);if(date)openProgrammeDay(date);return}programmeFinishDrag(e,true)}}
 function programmePointerCancel(e){if(programmeDrag&&e.pointerId===programmeDrag.pointerId)programmeFinishDrag(e,false)}
 function programmePointerUp(e,targetDate){}
 let programmeStageFilter='',programmeTradeFilter='';
