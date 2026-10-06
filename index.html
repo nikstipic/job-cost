@@ -875,7 +875,7 @@ function costRows(){
  return rows;
 }
 function fmtDate(v){if(!v)return '';let d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});}
-function costCategoryName(r){if(r.source==='Labour')return r.category||'Labour';if(r.source==='Trades')return r.category||'Trades';if(r.source==='Hire / Plant')return 'Hire / Plant';if(r.source==='Materials')return 'Materials';return r.category||'Other'}
+function costCategoryName(r){if(r.source==='Labour')return r.category||'Labour';if(r.source==='Trades')return r.category||'Trades';if(r.source==='Hire / Plant')return 'Hire / Plant';if(r.source==='Materials')return 'Materials';if(r.source==='Resource Booking')return 'Resource Bookings';return r.category||'Other'}
 let costDetailOpen=false,costBreakdownOpen={};
 function toggleCostBreakdown(k){costBreakdownOpen[k]=!costBreakdownOpen[k];renderCosts()}
 function toggleCostDetail(){costDetailOpen=!costDetailOpen;let x=document.getElementById('costsTable'),b=document.getElementById('costDetailBtn');if(x)x.style.display=costDetailOpen?'block':'none';if(b)b.textContent=costDetailOpen?'Hide Detail':'View Detail'}
@@ -889,7 +889,7 @@ function renderCosts(){
  let totals=rows.reduce((a,r)=>{a.budget+=r.budget;a.committed+=r.committed;a.actual+=r.actual;a.forecast+=r.forecast;return a},{budget:0,committed:0,actual:0,forecast:0});
  let budget=jobBudget||totals.budget,owing=Math.max(0,totals.committed-totals.actual),remaining=budget-totals.forecast,profit=contract-totals.forecast;
  document.getElementById('costSummary').innerHTML=[['Job Budget',budget],['Committed',totals.committed],['Paid',totals.actual],['Owing',owing],['Forecast Cost',totals.forecast],['Forecast Profit',profit]].map(x=>'<div class="card kpi"><small>'+x[0]+'</small><b class="'+((x[0]==='Owing'&&x[1]>0)||(x[0]==='Forecast Profit'&&x[1]<0)?'money-owing':(x[0]==='Paid'||x[0]==='Forecast Profit'&&x[1]>=0?'money-paid':''))+'">'+money(x[1])+'</b></div>').join('');
- let breakdownDefs=[['Trades','Trades'],['Labour','Labour'],['Materials','Materials'],['Hire / Plant','Hire / Plant'],['Other Cost','Other Costs / Budgets']];
+ let breakdownDefs=[['Trades','Trades'],['Labour','Labour'],['Materials','Materials'],['Hire / Plant','Hire / Plant'],['Resource Booking','Resource Bookings'],['Other Cost','Other Costs / Budgets']];
  let breakdownHtml='';
  breakdownDefs.forEach(([key,label])=>{let a=rows.filter(r=>r.source===key),t=a.reduce((s,r)=>{s.c+=+r.committed||0;s.p+=+r.actual||0;s.f+=+r.forecast||0;s.b+=+r.budget||0;return s},{c:0,p:0,f:0,b:0}),ow=Math.max(0,t.c-t.p),open=!!costBreakdownOpen[key];if(!a.length&&key!=='Other Cost')return;breakdownHtml+='<div class="person-card"><div class="person-head"><div><div class="person-name">'+label+'</div><div class="person-sub">'+a.length+' record'+(a.length===1?'':'s')+'</div></div><button class="btn" onclick="toggleCostBreakdown(\''+key.replace(/'/g,"\\'")+'\')">'+(open?'Hide':'View Breakdown')+'</button></div><div class="person-stats"><div class="mini-stat"><small>Committed</small><b>'+money(t.c)+'</b></div><div class="mini-stat"><small>Paid</small><b class="money-paid">'+money(t.p)+'</b></div><div class="mini-stat"><small>Owing</small><b class="money-owing">'+money(ow)+'</b></div><div class="mini-stat"><small>Forecast</small><b>'+money(t.f)+'</b></div></div>'+(open?costSourceBreakdownHtml(key,a):'')+'</div>'});
  document.getElementById('costCategorySummary').innerHTML=breakdownHtml||'<p>No automatic job costs have been entered yet.</p>';
