@@ -409,7 +409,7 @@ function createWorkspace(){let name=prompt('New job name');if(!name||!name.trim(
 
 const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
 const SUPABASE_KEY='sb_publishable_O8Zj8F17bHON1N061PXHkw_Xyc48pFS';
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb=null;try{if(window.supabase&&typeof window.supabase.createClient==='function')sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){console.warn('Cloud sync unavailable',e)}
 let cloudCode=(workspaceStore.items[workspaceStore.active]&&workspaceStore.items[workspaceStore.active].cloudCode)||localStorage.getItem('managementCloudCode')||'';
 let siteSnapshotDirty=false;
 let cloudBusy=false,cloudTimer=null,lastCloudJson='';
@@ -418,13 +418,13 @@ function newJobCode(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='MGT-';for(
 function setCloudState(msg){let e=document.getElementById('cloudState');if(e)e.textContent=msg}
 function openSync(){let dlg=document.getElementById('syncDlg'),input=document.getElementById('joinCode'),current=document.getElementById('syncCurrent'),msg=document.getElementById('syncMsg');if(!dlg||!input||!current||!msg)return;input.value=cloudCode;current.innerHTML=cloudCode?'<p><b>Connected code:</b> <span style="font-size:20px">'+cloudCode+'</span></p>':'<p>This device is not connected to a shared job yet.</p>';msg.textContent='';try{if(typeof dlg.showModal==='function'){if(!dlg.open)dlg.showModal()}else{dlg.setAttribute('open','');dlg.style.display='block'}}catch(e){dlg.setAttribute('open','');dlg.style.display='block'}}
 async function createCloudJob(){
- let code=newJobCode(),msg=document.getElementById('syncMsg');msg.textContent='Creating shared job…';
+ let msg=document.getElementById('syncMsg');if(!sb){msg.textContent='Cloud sync could not load in this browser. The rest of the app will still work.';return}let code=newJobCode();msg.textContent='Creating shared job…';
  let {error}=await sb.rpc('create_management_job',{p_code:code,p_data:db});
  if(error){msg.textContent='Could not create it yet: '+error.message;return}
  cloudCode=code;localStorage.setItem('managementCloudCode',code);lastCloudJson=JSON.stringify(db);startCloud();openSync();msg.textContent='Created. Enter this code on your other device: '+code;
 }
 async function joinCloudJob(){
- let code=normalCode(document.getElementById('joinCode').value),msg=document.getElementById('syncMsg');if(!code){msg.textContent='Enter a job code first.';return}
+ let code=normalCode(document.getElementById('joinCode').value),msg=document.getElementById('syncMsg');if(!sb){msg.textContent='Cloud sync could not load in this browser. The rest of the app will still work.';return}if(!code){msg.textContent='Enter a job code first.';return}
  msg.textContent='Connecting…';let {data,error}=await sb.rpc('load_management_job',{p_code:code});
  if(error||!data){msg.textContent='Code not found or could not connect.';return}
  if(!confirm('Load the shared job onto this device? This will replace the current local data on this device.'))return;
@@ -432,15 +432,15 @@ async function joinCloudJob(){
 }
 function leaveCloudJob(){cloudCode='';localStorage.removeItem('managementCloudCode');if(cloudTimer)clearInterval(cloudTimer);cloudTimer=null;setCloudState('— This device only');document.getElementById('syncDlg').close()}
 async function pushCloud(){
- if(!cloudCode||cloudBusy)return;let j=JSON.stringify(db);if(j===lastCloudJson){siteSnapshotDirty=false;return}cloudBusy=true;
+ if(!sb||!cloudCode||cloudBusy)return;let j=JSON.stringify(db);if(j===lastCloudJson){siteSnapshotDirty=false;return}cloudBusy=true;
  let {error}=await sb.rpc('save_management_job',{p_code:cloudCode,p_data:db});if(!error){lastCloudJson=j;siteSnapshotDirty=false;setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');
  cloudBusy=false;
 }
 async function pullCloud(){
- if(!cloudCode||cloudBusy)return;if(siteSnapshotDirty){pushCloud();return}cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
+ if(!sb||!cloudCode||cloudBusy)return;if(siteSnapshotDirty){pushCloud();return}cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
  if(!error&&data){let remote=JSON.stringify(data);if(remote!==lastCloudJson){db=data;localStorage.setItem('mmdb',remote);lastCloudJson=remote;render()}setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');cloudBusy=false;
 }
-function startCloud(){saveWorkspaceStore();if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
+function startCloud(){saveWorkspaceStore();if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}if(!sb){setCloudState('— Sync unavailable');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
 
 
 const hireCategories=['Truck / Tipper','Crane','Concrete Pump','Excavator','Bobcat / Skid Steer','EWP / Scissor Lift','Forklift / Telehandler','Loader','Roller / Compactor','Generator','Site Shed','Portable Toilet','Skip Bin / Waste','Temporary Fencing','Traffic Control Equipment','Tools / Small Plant','Other'];
