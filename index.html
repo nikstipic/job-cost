@@ -454,8 +454,6 @@ nav button.active,.subnav button.active{background:#16263d!important;color:#fff!
  nav button:nth-child(1):before{content:'⌂'}
  nav button:nth-child(2):before{content:'
 </head>
-</style>
-</head>
 <body>
 <header><div><div class="brand">MANAGEMENT</div><div class="sub">Construction Job Control <span id="cloudState">— This device only</span></div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="job-switcher"><small>JOB</small><select id="jobWorkspaceSelect" onchange="switchWorkspace(this.value)"></select><button class="btn" onclick="createWorkspace()">+ New Job</button></div><button type="button" class="btn green" onclick="openSync()" ontouchend="event.preventDefault();openSync()">Share / Sync</button><select id="role"><option>Management</option><option>Site Supervisor</option></select></div></header>
 <nav id="nav"></nav><div id="subnav" class="subnav"></div>
