@@ -418,13 +418,12 @@ if(!db.hire)db.hire=[];if(!db.tasks)db.tasks=[];if(!db.estimates)db.estimates=[]
 });
 localStorage.setItem('mmdb',JSON.stringify(db));
 
-const pages=['myday','price','build','money','payments','directory'];
+const pages=['myday','price','build','money','directory'];
 const pricePages=[['pricing','Overview'],['estimating','Trade Packages'],['pricingmaterials','Materials / Fixtures'],['pricingextras','Preliminaries / Other'],['finalbudget','Final Budget']];
 const buildPages=[['bookings','Programme'],['signin','Site Sign-In'],['issues','Issues'],['materials','Materials'],['daily','Site Diary'],['jobs','Job']];
-const moneyPages=[['costs','Budget / Costs']];
-const paymentPages=[['trades','Trades'],['labour','Labour'],['hire','Hire / Plant']];
+const moneyPages=[['costs','Budget / Costs'],['trades','Trades'],['labour','Labour'],['hire','Hire / Plant']];
 const directoryPages=[['directoryTrades','Trades'],['directoryLabour','Labour'],['directoryHire','Hire / Plant']];
-const labels={dashboard:'Dashboard',myday:'My Day',price:'Pricing',build:'Build',money:'Money',payments:'Payments',directory:'Directory',pricing:'Pricing Overview',overview:'Build Overview',estimating:'Estimating',jobs:'Job Setup',costs:'Budget / Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Programme',issues:'Issues',signin:'Site Sign-In',daily:'Site Diary',claims:'Progress Claim'};
+const labels={dashboard:'Dashboard',myday:'My Day',price:'Pricing',build:'Build',money:'Money',directory:'Directory',pricing:'Pricing Overview',overview:'Build Overview',estimating:'Estimating',jobs:'Job Setup',costs:'Budget / Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Programme',issues:'Issues',signin:'Site Sign-In',daily:'Site Diary',claims:'Progress Claim'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
 function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();pushCloud()}
@@ -435,9 +434,9 @@ function nav(){
   if(supervisor){activatePage('myday');renderSubnav('')}else renderSubnav('')
 }
 function activatePage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));let el=document.getElementById(p);if(el)el.classList.add('active')}
-function renderSubnav(group,active){let el=document.getElementById('subnav'),items=group==='price'?pricePages:group==='build'?(currentRole()==='Site Supervisor'?buildPages.filter(x=>x[0]!=='jobs'):buildPages):group==='money'?moneyPages:group==='payments'?paymentPages:group==='directory'?directoryPages:[];if(!items.length){el.className='subnav';el.innerHTML='';return}el.className='subnav show';el.innerHTML=items.map((x,i)=>`<button class="${(active?x[0]===active:i===0)?'active':''}" onclick="showSub('${group}','${x[0]}',this)">${x[1]}</button>`).join('')}
+function renderSubnav(group,active){let el=document.getElementById('subnav'),items=group==='price'?pricePages:group==='build'?(currentRole()==='Site Supervisor'?buildPages.filter(x=>x[0]!=='jobs'):buildPages):group==='money'?moneyPages:group==='directory'?directoryPages:[];if(!items.length){el.className='subnav';el.innerHTML='';return}el.className='subnav show';el.innerHTML=items.map((x,i)=>`<button class="${(active?x[0]===active:i===0)?'active':''}" onclick="showSub('${group}','${x[0]}',this)">${x[1]}</button>`).join('')}
 function safeFlushSiteSnapshot(){try{flushSiteSnapshotSave()}catch(err){console.error('Site Diary save failed during navigation',err)}}
-function showMain(p,b){safeFlushSiteSnapshot();document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');let groups={price:['pricing','pricing'],build:['bookings','bookings'],money:['costs','costs'],payments:['trades','trades'],directory:['directoryTrades','directoryTrades']};if(groups[p]){activatePage(groups[p][0]);renderSubnav(p,groups[p][1])}else{activatePage(p);renderSubnav('')}}
+function showMain(p,b){safeFlushSiteSnapshot();document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');let groups={price:['pricing','pricing'],build:['bookings','bookings'],money:['costs','costs'],directory:['directoryTrades','directoryTrades']};if(groups[p]){activatePage(groups[p][0]);renderSubnav(p,groups[p][1])}else{activatePage(p);renderSubnav('')}}
 function showSub(group,p,b){safeFlushSiteSnapshot();activatePage(p);document.querySelectorAll('#subnav button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active')}
 function show(p,b){activatePage(p);if(b)b.classList.add('active')}
 function imageGallery(value,w=90,h=70){let imgs=Array.isArray(value)?value:(value?[value]:[]);if(!imgs.length)return '';let packed=encodeURIComponent(JSON.stringify(imgs));return '<div class="photo-stack" onclick="openPhotoSet(decodeURIComponent(this.dataset.photos),0)" data-photos="'+packed+'"><img class="photo-thumb" src="'+imgs[0]+'" alt="Site photos" style="width:'+w+'px;height:'+h+'px;object-fit:cover;border-radius:6px">'+(imgs.length>1?'<span class="photo-count">'+imgs.length+' photos</span>':'')+'</div>'}
