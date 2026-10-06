@@ -2315,6 +2315,13 @@ function overviewRows(){
 function toggleFullRegister(){let el=document.getElementById('overviewSheet'),b=event?.target;if(!el)return;let opening=el.style.display==='none';el.style.display=opening?'block':'none';if(b)b.textContent=opening?'Hide Full Job Register':'View Full Job Register'}
 function overviewItem(r){return '<div class="overview-item"><div class="overview-item-main"><div class="overview-item-title">'+(r.category||r.details||'Scheduled item')+'</div><div class="overview-item-sub">'+[r.group,r.details,r.supplier].filter(Boolean).join(' • ')+'</div></div><span class="'+((r.completed||r.status==='Completed')?'status-paid':'status-booked')+'">'+(r.completed?'Complete':(r.status||'Scheduled'))+'</span></div>'}
 function bookingOwner(r){return (r.supplier||r.category||r.group||'Other').trim()||'Other'}
+function bookingCoversDate(b,date){
+ if(!b||!date||!b.date)return false;
+ let start=String(b.date),finish=String(b.endDate||b.date);
+ if(finish<start){let t=start;start=finish;finish=t}
+ return date>=start&&date<=finish
+}
+
 function activeBookingGroups(list){let m={};list.filter(x=>!x.completed&&x.status!=='Completed').forEach(r=>{let key=(r.group||'Other')+'|'+bookingOwner(r);if(!m[key])m[key]={name:bookingOwner(r),group:r.group||'Other',items:[]};m[key].items.push(r)});return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name))}
 function toggleBookingPerson(id){let el=document.getElementById(id);if(el)el.classList.toggle('open')}
 function bookingGroupCard(g,i,prefix){let items=g.items.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')),dates=[...new Set(items.map(x=>x.date).filter(Boolean))],first=dates[0],last=dates[dates.length-1],range=first?(first===last?fmtDate(first):fmtDate(first)+' – '+fmtDate(last)):'No dates',id=prefix+'-'+i;return '<div class="booking-person" id="'+id+'"><button class="booking-person-head" onclick="toggleBookingPerson(\''+id+'\')"><div><div class="booking-person-name">'+g.name+'</div><div class="booking-person-meta">'+g.group+' • '+dates.length+' booked day'+(dates.length===1?'':'s')+' • '+range+'</div></div><span class="status-booked">View dates</span></button><div class="booking-person-days">'+items.map(r=>'<div class="booking-day"><div><b>'+fmtDate(r.date)+'</b>'+(r.details?'<div class="overview-item-sub">'+r.details+'</div>':'')+'</div><span>'+(r.status||'Scheduled')+'</span></div>').join('')+'</div></div>'}
