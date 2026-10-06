@@ -2011,6 +2011,17 @@ function programmeActivityDates(a){
  let dates=[];for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1)){let iso=programmeIso(d);if(workDays.includes(d.getDay())&&!excluded.has(iso))dates.push(iso)}
  return dates
 }
+function programmeWorkerNames(a){
+ if(!a)return [];
+ let raw=[];
+ if(Array.isArray(a.workers))raw.push(...a.workers);
+ else if(a.workers)raw.push(...String(a.workers).split(','));
+ if(Array.isArray(a.workerNames))raw.push(...a.workerNames);
+ else if(a.workerNames)raw.push(...String(a.workerNames).split(','));
+ if(a.worker)raw.push(a.worker);
+ if(a.responsible)raw.push(a.responsible);
+ return [...new Set(raw.map(x=>String(x||'').trim()).filter(Boolean))]
+}
 function programmeActivityGroups(){
  let groups=[];
  (db.programmeActivities||[]).forEach(a=>{
