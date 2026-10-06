@@ -383,7 +383,7 @@ claims:[['number','Claim Number / Reference'],['period','Claim Period / Descript
 // One-time cleanup of legacy V1 demo data already saved in this browser.
 const CLEAN_SLATE_VERSION='management-clean-v1';
 const INTEGRITY_VERSION='management-integrity-v2';
-function repairIntegrity(){if(localStorage.getItem('managementIntegrityVersion')===INTEGRITY_VERSION)return;db.bookings=(db.bookings||[]).filter(b=>!['Job','Cost','Site Issue'].includes(b.group));(db.materials||[]).forEach(r=>{if(r.needed){let old={...r};syncBooking('materials',r,old)}});localStorage.setItem('managementIntegrityVersion',INTEGRITY_VERSION);localStorage.setItem('mmdb',JSON.stringify(db))}
+function repairIntegrity(){try{if(localStorage.getItem('managementIntegrityVersion')===INTEGRITY_VERSION)return;db.bookings=(db.bookings||[]).filter(b=>!['Job','Cost','Site Issue'].includes(b.group));localStorage.setItem('managementIntegrityVersion',INTEGRITY_VERSION);localStorage.setItem('mmdb',JSON.stringify(db))}catch(e){console.warn('Integrity repair skipped',e)}}
 
 if(localStorage.getItem('managementDataVersion')!==CLEAN_SLATE_VERSION){
   localStorage.removeItem('mmdb');
@@ -1209,5 +1209,9 @@ document.getElementById('role').addEventListener('change',e=>{
   else{activatePage('myday');renderSubnav('');document.querySelectorAll('#nav button').forEach((x,i)=>x.classList.toggle('active',i===0))}
   renderMyDay();
 });
-repairIntegrity();nav();renderWorkspaceSwitcher();render();appReady=true;setCloudState(cloudCode?'— Shared '+cloudCode:'— This device only');
+repairIntegrity();
+try{nav()}catch(e){console.error('Navigation startup failed',e)}
+try{renderWorkspaceSwitcher()}catch(e){console.error('Workspace startup failed',e)}
+try{render()}catch(e){console.error('Page render startup failed',e);try{renderMyDay()}catch(_){}}
+appReady=true;setCloudState(cloudCode?'— Shared '+cloudCode:'— This device only');
 </script></body></html>
