@@ -1055,7 +1055,8 @@ function renderMobileProgrammeAgenda(){
  let attentionHtml=attention.slice(0,6).map(x=>mobileProgrammeActivityCard(x.a,x.i)).join('');
  let upcomingHtml=upcoming.slice(0,8).map(x=>{let d=programmeDate(x.date),count=x.activities.length+x.bookings.length+x.milestones.length,preview=x.activities.slice(0,3).map(({a,i})=>'<button onclick="openProgrammeActivity('+i+')"><b>'+snapshotEsc(a.name)+'</b><span>'+snapshotEsc(a.responsible||a.stage||'Activity')+'</span></button>').join('');return '<div class="mp-upcoming"><button class="mp-upcoming-date" onclick="openProgrammeDay(\''+x.date+'\')"><b>'+d.toLocaleDateString('en-AU',{weekday:'short'})+' '+d.getDate()+'</b><span>'+d.toLocaleDateString('en-AU',{month:'short'})+' • '+count+' item'+(count===1?'':'s')+'</span></button><div>'+preview+(count>x.activities.slice(0,3).length?'<button class="mp-more" onclick="openProgrammeDay(\''+x.date+'\')">View all '+count+' →</button>':'')+'</div></div>'}).join('');
  let screen=mobileProgrammeScreen||'today';let page=document.getElementById('bookings');if(page)page.dataset.mobileProgrammeScreen=screen;
- let todayHtml='<div class="mp-head"><div><span>PROGRAMME</span><b>'+programmeDate(data.today).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'})+'</b></div><button onclick="openProgrammeDay(\''+data.today+'\')">Open today</button></div><div class="mp-quick"><button onclick="openProgrammeActivity()">+ Activity</button><button onclick="openBookingForm(\''+data.today+'\')">+ Resource</button><button onclick="openProgrammeMilestone()">◆ Milestone</button></div><section class="mp-block mp-today"><div class="mp-title"><div><span>TODAY</span><b>'+(todayRows.activities.length+todayRows.bookings.length+todayRows.milestones.length)+' programmed</b></div></div>'+(todayActivities+todayMilestones+todayBookings||'<div class="mp-empty"><b>Nothing programmed today</b><span>Tap Open today to add work or resources.</span></div>')+'</section>'+(attention.length?'<section class="mp-block"><div class="mp-title danger"><div><span>NEEDS ATTENTION</span><b>'+attention.length+' activit'+(attention.length===1?'y':'ies')+'</b></div></div>'+attentionHtml+(attention.length>6?'<div class="mp-note">+'+(attention.length-6)+' more needing attention</div>':'')+'</section>':'')+'<section class="mp-block"><div class="mp-title"><div><span>COMING UP</span><b>Next 2 weeks</b></div></div>'+(upcomingHtml||'<div class="mp-empty"><b>Nothing coming up</b><span>No programme items in the next two weeks.</span></div>')+'</section>';
+ let todayCount=todayRows.activities.length+todayRows.bookings.length+todayRows.milestones.length,inProgress=todayRows.activities.filter(({a})=>programmeActivityState(a).label==='In Progress').length;
+ let todayHtml='<div class="mp-todaybar"><div class="mp-datebadge"><span>'+programmeDate(data.today).toLocaleDateString('en-AU',{weekday:'short'}).toUpperCase()+'</span><b>'+programmeDate(data.today).getDate()+'</b></div><div class="mp-todaycopy"><span>TODAY</span><b>'+programmeDate(data.today).toLocaleDateString('en-AU',{month:'long',year:'numeric'})+'</b></div><button onclick="openProgrammeDay(\''+data.today+'\')">＋</button></div><div class="mp-stats"><div><b>'+todayCount+'</b><span>Today</span></div><div><b>'+inProgress+'</b><span>Active</span></div><div class="'+(attention.length?'warn':'')+'"><b>'+attention.length+'</b><span>Attention</span></div></div><section class="mp-block mp-today"><div class="mp-title"><div><span>SITE WORK</span><b>'+(todayRows.activities.length?'Activities today':'No activities today')+'</b></div><button onclick="openProgrammeActivity()">＋ Add</button></div>'+(todayActivities+todayMilestones+todayBookings||'<div class="mp-empty"><b>Nothing programmed today</b><span>Add an activity or resource for today.</span></div>')+'</section>';
  let attentionBlock=attention.length?'<section class="mp-block"><div class="mp-title danger"><div><span>NEEDS ATTENTION</span><b>'+attention.length+' activit'+(attention.length===1?'y':'ies')+'</b></div></div>'+attentionHtml+(attention.length>6?'<div class="mp-note">+'+(attention.length-6)+' more needing attention</div>':'')+'</section>':'';
  let aheadHtml='<div class="mp-screen-head"><div><span>LOOK AHEAD</span><b>Next 2 weeks</b></div><button onclick="openProgrammeDay(\''+data.today+'\')">Calendar</button></div>'+attentionBlock+'<section class="mp-block"><div class="mp-title"><div><span>UPCOMING WORK</span><b>What’s next</b></div></div>'+(upcomingHtml||'<div class="mp-empty"><b>Nothing coming up</b><span>No programme items in the next two weeks.</span></div>')+'</section>';
  let planHtml='<div class="mp-screen-head"><div><span>PLAN</span><b>Manage programme</b></div></div><div class="mp-plan-actions"><button onclick="openProgrammeActivity()"><b>＋</b><span>Add activity</span></button><button onclick="openBookingForm()"><b>＋</b><span>Add resource</span></button><button onclick="openProgrammeMilestone()"><b>◆</b><span>Add milestone</span></button><button onclick="toggleMobileProgrammeChart()"><b>▦</b><span>Full timetable</span></button></div><div class="mp-plan-note"><b>Programme management</b><span>Your activities and resource bookings are below. Use this screen when planning rather than checking today’s site work.</span></div>';
@@ -1581,6 +1582,36 @@ appReady=true;setCloudState(cloudCode?'— Shared '+cloudCode:'— This device o
  #daily .section:nth-of-type(2)>.toolbar{display:block!important}
  #daily .section:nth-of-type(2)>.toolbar>.primary{width:100%!important;min-height:46px!important;margin-top:8px}
  #jobs #jobSetupContent{margin-top:0!important}
+}
+
+@media(max-width:700px){
+ body:has(#bookings.active) .mobile-build-head{display:none}
+ body:has(#bookings.active) .mobile-build-shell.show{top:88px}
+ body:has(#bookings.active) .mobile-build-nav{padding-top:6px}
+ #bookings .mobile-programme-tabs{top:139px!important;margin:0 -9px 8px!important;padding:5px 9px!important;background:#f4f6f8!important;border-bottom:0!important}
+ #bookings .mobile-programme-tabs button{min-height:34px!important;font-size:11px!important;border-radius:9px!important}
+ #bookings .mobile-programme-tabs button.active{box-shadow:0 1px 3px rgba(16,24,40,.16)}
+ .mp-todaybar{display:grid;grid-template-columns:44px 1fr 38px;gap:9px;align-items:center;padding:5px 1px 9px}
+ .mp-datebadge{background:#17243b;color:#fff;border-radius:11px;text-align:center;padding:5px 2px}.mp-datebadge span{display:block;font-size:8px;font-weight:900;letter-spacing:.06em}.mp-datebadge b{display:block;font-size:20px;line-height:21px}
+ .mp-todaycopy span{display:block;font-size:8px;font-weight:900;letter-spacing:.1em;color:#667085}.mp-todaycopy b{display:block;font-size:16px;color:#101828;margin-top:1px}.mp-todaybar>button{width:38px;height:38px;border:0;border-radius:11px;background:#17243b;color:#fff;font-size:22px}
+ .mp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:9px}.mp-stats>div{background:#fff;border:1px solid #e4e7ec;border-radius:11px;padding:8px 9px}.mp-stats b,.mp-stats span{display:block}.mp-stats b{font-size:18px;color:#101828}.mp-stats span{font-size:9px;color:#667085;margin-top:1px}.mp-stats .warn{background:#fff7ed;border-color:#fed7aa}.mp-stats .warn b,.mp-stats .warn span{color:#b54708}
+ #bookings .mp-block{margin:0 0 9px!important;padding:10px!important;border:1px solid #e4e7ec!important;border-radius:13px!important;background:#fff!important}
+ #bookings .mp-title{margin:0 0 6px!important}.mp-title>button{border:0;background:#f2f4f7;border-radius:8px;padding:6px 8px;font-size:9px;font-weight:850;color:#344054}
+ #bookings .mp-title b{font-size:14px!important}
+ #bookings .mp-card{border:0!important;border-top:1px solid #eaecf0!important;border-radius:0!important;margin:0!important;box-shadow:none!important}
+ #bookings .mp-card:first-of-type{border-top:0!important}
+ #bookings .mp-card.attention{border-left:3px solid #d92d20!important}
+ #bookings .mp-card-main{padding:9px 5px!important}
+ #bookings .mp-card-main>b{font-size:13px!important}
+ #bookings .mp-card-main>small{font-size:9px!important}
+ #bookings .mp-card-top{margin-bottom:3px!important}
+ #bookings .mp-progress{height:4px!important;margin-top:6px!important}
+ #bookings .mp-progress-label{margin-top:3px!important}
+ #bookings .mp-simple{border:0!important;border-top:1px solid #eaecf0!important;border-radius:0!important;margin:0!important;padding:9px 5px!important}
+ #bookings .mp-simple.milestone,#bookings .mp-simple.resource{border-left:3px solid #f79009!important}
+ #bookings .mp-simple.resource{border-left-color:#84adff!important}
+ #bookings .mp-upcoming{grid-template-columns:58px 1fr!important;gap:6px!important;padding:7px 0!important}
+ #bookings .mp-screen-head{padding:3px 1px 8px!important}.mp-screen-head b{font-size:17px!important}
 }
 </style>
 </head>
