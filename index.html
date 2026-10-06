@@ -357,6 +357,7 @@ const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
 const SUPABASE_KEY='sb_publishable_O8Zj8F17bHON1N061PXHkw_Xyc48pFS';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let cloudCode=(workspaceStore.items[workspaceStore.active]&&workspaceStore.items[workspaceStore.active].cloudCode)||localStorage.getItem('managementCloudCode')||'';
+let siteSnapshotDirty=false;
 let cloudBusy=false,cloudTimer=null,lastCloudJson='';
 function normalCode(v){return (v||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim()}
 function newJobCode(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='MGT-';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s}
@@ -377,12 +378,12 @@ async function joinCloudJob(){
 }
 function leaveCloudJob(){cloudCode='';localStorage.removeItem('managementCloudCode');if(cloudTimer)clearInterval(cloudTimer);cloudTimer=null;setCloudState('— This device only');document.getElementById('syncDlg').close()}
 async function pushCloud(){
- if(!cloudCode||cloudBusy)return;let j=JSON.stringify(db);if(j===lastCloudJson)return;cloudBusy=true;
- let {error}=await sb.rpc('save_management_job',{p_code:cloudCode,p_data:db});if(!error){lastCloudJson=j;setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');
+ if(!cloudCode||cloudBusy)return;let j=JSON.stringify(db);if(j===lastCloudJson){siteSnapshotDirty=false;return}cloudBusy=true;
+ let {error}=await sb.rpc('save_management_job',{p_code:cloudCode,p_data:db});if(!error){lastCloudJson=j;siteSnapshotDirty=false;setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');
  cloudBusy=false;
 }
 async function pullCloud(){
- if(!cloudCode||cloudBusy)return;cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
+ if(!cloudCode||cloudBusy)return;if(siteSnapshotDirty){pushCloud();return}cloudBusy=true;let {data,error}=await sb.rpc('load_management_job',{p_code:cloudCode});
  if(!error&&data){let remote=JSON.stringify(data);if(remote!==lastCloudJson){db=data;localStorage.setItem('mmdb',remote);lastCloudJson=remote;render()}setCloudState('— Synced '+cloudCode)}else setCloudState('— Sync error');cloudBusy=false;
 }
 function startCloud(){saveWorkspaceStore();if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
@@ -481,7 +482,7 @@ function openSiteHoursDetailByKey(key){let x=siteHoursData().rows.find(r=>r.key=
 function queueSiteSnapshotSave(){if(siteSnapshotLoading)return;clearTimeout(siteSnapshotSaveTimer);siteSnapshotSaveTimer=setTimeout(()=>saveSiteSnapshot(true),350)}
 function flushSiteSnapshotSave(){if(siteSnapshotLoading)return;clearTimeout(siteSnapshotSaveTimer);siteSnapshotSaveTimer=null;let rowsEl=document.getElementById('siteSnapshotRows');if(rowsEl&&activeSiteSnapshotDate)saveSiteSnapshot(true)}
 function reloadSiteSnapshotOnReturn(){let date=activeSiteDay||activeSiteSnapshotDate||new Date().toLocaleDateString('en-CA');setTimeout(()=>loadSiteSnapshot(date),0)}
-function storeSiteSnapshot(date,rows){if(!date)return;if(!Array.isArray(db.siteSnapshots))db.siteSnapshots=[];let i=db.siteSnapshots.findIndex(x=>x.date===date),record={date,rows};if(i>=0)db.siteSnapshots[i]=record;else db.siteSnapshots.push(record);let dr=(db.daily||[]).find(x=>x.date===date),ins=rows.filter(x=>x.in);if(dr){dr.workers=ins.length;dr.snapshotAttendance=ins.map(x=>({name:x.name,position:x.position,crew:x.crew,area:x.area,activity:x.activity,planned:x.planned,actual:x.actual}))}saveWorkspaceStore();pushCloud()}
+function storeSiteSnapshot(date,rows){if(!date)return;if(!Array.isArray(db.siteSnapshots))db.siteSnapshots=[];let i=db.siteSnapshots.findIndex(x=>x.date===date),record={date,rows};if(i>=0)db.siteSnapshots[i]=record;else db.siteSnapshots.push(record);let dr=(db.daily||[]).find(x=>x.date===date),ins=rows.filter(x=>x.in);if(dr){dr.workers=ins.length;dr.snapshotAttendance=ins.map(x=>({name:x.name,position:x.position,crew:x.crew,area:x.area,activity:x.activity,planned:x.planned,actual:x.actual}))}siteSnapshotDirty=true;saveWorkspaceStore();pushCloud()}
 function saveSiteSnapshot(silent=false){clearTimeout(siteSnapshotSaveTimer);siteSnapshotSaveTimer=null;let date=activeSiteSnapshotDate||activeSiteDay||document.getElementById('siteSnapshotDate')?.value||siteIsoDate(new Date()),rows=currentSiteSnapshotRows();storeSiteSnapshot(date,rows);renderSiteHoursBreakdown();renderDailyReports();if(!silent)loadSiteSnapshot(date)}
 let dailyFilter='recent',activeDailyIndex=null;
 function setDailyFilter(v,b){dailyFilter=v;document.querySelectorAll('[data-daily-filter]').forEach(x=>x.classList.remove('green'));if(b)b.classList.add('green');renderDailyReports()}
