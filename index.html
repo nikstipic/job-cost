@@ -947,7 +947,11 @@ function programmeMoveBookingGroup(key,targetDate){
 let programmeDrag=null,programmeDragSourceDate='';
 function programmeCellAtPoint(x,y){
  let el=document.elementFromPoint(x,y),cell=el&&el.closest?el.closest('.programme-cell[data-programme-date]'):null;
- return cell?cell.dataset.programmeDate:''
+ if(cell)return cell.dataset.programmeDate||'';
+ let cells=[...document.querySelectorAll('#constructionProgramme .programme-cell[data-programme-date]')];
+ let sameRow=cells.filter(n=>{let r=n.getBoundingClientRect();return y>=r.top&&y<=r.bottom});
+ let hit=sameRow.find(n=>{let r=n.getBoundingClientRect();return x>=r.left&&x<=r.right});
+ return hit?.dataset.programmeDate||''
 }
 function programmeMoveMilestone(id,targetDate){
  let m=(db.programmeMilestones||[]).find(x=>x.id===id);if(!m||!m.date||!targetDate||m.date===targetDate)return;
@@ -956,21 +960,21 @@ function programmeMoveMilestone(id,targetDate){
 }
 function programmeMilestonePointerDown(e,id,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
- let diamond=e.currentTarget;programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date,startX:e.clientX,startY:e.clientY,moved:false};
+ let diamond=e.currentTarget;if(diamond.setPointerCapture&&e.pointerId!==undefined)try{diamond.setPointerCapture(e.pointerId)}catch(_){}programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date,startX:e.clientX,startY:e.clientY,moved:false};
  diamond.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
 function programmeBookingPointerDown(e,key,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
+ if(bar.setPointerCapture&&e.pointerId!==undefined)try{bar.setPointerCapture(e.pointerId)}catch(_){}programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
 function programmePointerDown(e,id,date,edge){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
+ if(bar.setPointerCapture&&e.pointerId!==undefined)try{bar.setPointerCapture(e.pointerId)}catch(_){}let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
  programmeDrag={id,date:anchor,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:anchor,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');
  document.body.classList.add('programme-drag-active');
@@ -2129,7 +2133,11 @@ function programmeMoveBookingGroup(key,targetDate){
 let programmeDrag=null,programmeDragSourceDate='';
 function programmeCellAtPoint(x,y){
  let el=document.elementFromPoint(x,y),cell=el&&el.closest?el.closest('.programme-cell[data-programme-date]'):null;
- return cell?cell.dataset.programmeDate:''
+ if(cell)return cell.dataset.programmeDate||'';
+ let cells=[...document.querySelectorAll('#constructionProgramme .programme-cell[data-programme-date]')];
+ let sameRow=cells.filter(n=>{let r=n.getBoundingClientRect();return y>=r.top&&y<=r.bottom});
+ let hit=sameRow.find(n=>{let r=n.getBoundingClientRect();return x>=r.left&&x<=r.right});
+ return hit?.dataset.programmeDate||''
 }
 function programmeMoveMilestone(id,targetDate){
  let m=(db.programmeMilestones||[]).find(x=>x.id===id);if(!m||!m.date||!targetDate||m.date===targetDate)return;
@@ -2138,21 +2146,21 @@ function programmeMoveMilestone(id,targetDate){
 }
 function programmeMilestonePointerDown(e,id,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
- let diamond=e.currentTarget;programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date,startX:e.clientX,startY:e.clientY,moved:false};
+ let diamond=e.currentTarget;if(diamond.setPointerCapture&&e.pointerId!==undefined)try{diamond.setPointerCapture(e.pointerId)}catch(_){}programmeDrag={milestoneId:id,date,edge:'milestone-move',pointerId:e.pointerId,bar:diamond,lastDate:date,startX:e.clientX,startY:e.clientY,moved:false};
  diamond.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
 function programmeBookingPointerDown(e,key,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
+ if(bar.setPointerCapture&&e.pointerId!==undefined)try{bar.setPointerCapture(e.pointerId)}catch(_){}programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
 function programmePointerDown(e,id,date,edge){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
  let bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
+ if(bar.setPointerCapture&&e.pointerId!==undefined)try{bar.setPointerCapture(e.pointerId)}catch(_){}let activity=programmeActivities().find(x=>x.id===id),activityDates=activity?programmeActivityDates(activity):[],anchor=(edge&&edge!=='move')?date:(activityDates[0]||date);
  programmeDrag={id,date:anchor,edge:edge||'move',pointerId:e.pointerId,bar,lastDate:anchor,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');
  document.body.classList.add('programme-drag-active');
