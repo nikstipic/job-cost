@@ -26,3 +26,7 @@ UX checks also cover attendance search/picker/absence, material filters and edit
 indexes, task responsibility/priority, explicit diary suggestions, storage failure
 feedback, and visible diary Save controls at 360/390/430px with short viewports.
 See [UX_REVIEW.md](../UX_REVIEW.md) for the audit and validation limits.
+
+Large-crew attendance tests cover bulk expected/selected actions, dynamic groups,
+overwrite protection and cancellation, individual overrides, dated history, job
+defaults and mobile Save Day. See [BULK_ATTENDANCE.md](../BULK_ATTENDANCE.md).
