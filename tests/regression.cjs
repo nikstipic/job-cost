@@ -14,8 +14,8 @@ before(async()=>{
  browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox']});
 });
 after(async()=>{await browser?.close();await new Promise(resolve=>server.close(resolve))});
-async function withPage(run,{mobile=false,legacy=null}={}){
- const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1500,height:1000},isMobile:mobile,hasTouch:mobile,timezoneId:'Australia/Sydney'});
+async function withPage(run,{mobile=false,legacy=null,viewport=null}={}){
+ const context=await browser.newContext({viewport:viewport||(mobile?{width:390,height:844}:{width:1500,height:1000}),isMobile:mobile,hasTouch:mobile,timezoneId:'Australia/Sydney'});
  const page=await context.newPage(),errors=[];page.setDefaultTimeout(5000);
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().startsWith('Failed to load resource'))errors.push(m.text())});
  await page.route('https://cdn.jsdelivr.net/**',route=>route.abort());
@@ -29,7 +29,7 @@ async function seed(page){return page.evaluate(()=>{
  db.trades=[{company:'Alpha Trade',trade:'Plumbing',price:1000,payments:[{date:'2026-01-01',amount:100}]}];db.hire=[{company:'Plant Co',item:'Crane',category:'Crane'}];
  persist();return siteIsoDate(new Date());
 })}
-async function fill(page,selector,fields){for(const [name,value]of Object.entries(fields))await page.locator(`${selector} [name="${name}"]`).fill(String(value))}
+async function fill(page,selector,fields){for(const [name,value]of Object.entries(fields)){const input=page.locator(`${selector} [name="${name}"]`);await input.evaluate(node=>{for(let ancestor=node.parentElement;ancestor;ancestor=ancestor.parentElement)if(ancestor.tagName==='DETAILS')ancestor.open=true});await input.fill(String(value))}}
 async function saveGeneral(page){await page.locator('#dlg').getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>!document.getElementById('dlg').open)}
 async function activity(page,date){
  await page.evaluate(()=>openProgrammeActivity());
@@ -93,7 +93,7 @@ test('labour scheduling drag updates plans and expectations, preserves actual ho
 }));
 test('popup Remove Future removes all related future schedules but keeps history',()=>withPage(async page=>{
  const date=await seed(page);await page.evaluate(d=>{activeWorkerIndex=0;labourSelectedDates=new Set(dateRange(d,programmeAddDays(d,4)));bookLabourDates({preventDefault(){},target:document.getElementById('labourBookingForm')});db.bookings.push({group:'Labour',supplier:'Other Worker',date:programmeAddDays(d,3)});openProgrammeDay(programmeAddDays(d,2))},date);
- await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Zed'}).getByRole('button',{name:'Remove Future'}).click();
+ await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Zed'}).locator('.row-menu summary').click();await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Zed'}).getByRole('button',{name:'Remove Future'}).click();
  assert.deepEqual(await page.evaluate(()=>db.labour[0].planned.map(p=>p.date)),await page.evaluate(d=>dateRange(d,programmeAddDays(d,1)),date));
  assert.equal(await page.evaluate(()=>db.labour[0].entries[0].hours),4);assert.equal(await page.evaluate(()=>db.bookings.some(b=>b.supplier==='Other Worker')),true);
  assert.equal(await page.locator('#programmeDayBody').getByText('Zed',{exact:true}).count(),0);
@@ -104,7 +104,7 @@ test('popup sorted Edit and Delete target the correct booking and update attenda
  assert.deepEqual(await page.evaluate(()=>currentSiteSnapshotRows().map(r=>r.name)),['Alpha Trade','Zed']);
  await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Alpha Trade'}).getByRole('button',{name:'Edit',exact:true}).click();await fill(page,'#dlg',{details:'Updated plumbing'});await saveGeneral(page);
  assert.equal(await page.evaluate(()=>db.bookings.find(b=>b.group==='Trade').details),'Updated plumbing');assert.equal(await page.evaluate(()=>db.bookings.find(b=>b.group==='Labour').details),'Scheduled site work');
- await page.evaluate(d=>openProgrammeDay(d),date);await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Alpha Trade'}).getByRole('button',{name:'Delete',exact:true}).click();
+ await page.evaluate(d=>openProgrammeDay(d),date);await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Alpha Trade'}).locator('.row-menu summary').click();await page.locator('#programmeDayBody .programme-day-item').filter({hasText:'Alpha Trade'}).getByRole('button',{name:'Delete',exact:true}).click();
  assert.deepEqual(await page.evaluate(()=>currentSiteSnapshotRows().map(r=>r.name)),['Zed']);assert.equal(await page.evaluate(()=>db.trades[0].payments[0].amount),100);
 }));
 test('desktop pointer drag moves complete activity and resource ranges and dates remain clickable',()=>withPage(async page=>{
@@ -123,7 +123,7 @@ test('labour/trade detail edits retain plans, payments, history and unknown fiel
  await page.evaluate(()=>openForm('trades',0));await fill(page,'#dlg',{contact:'New contact'});await saveGeneral(page);assert.equal(await page.evaluate(()=>db.trades[0].payments[0].amount),100);
 }));
 test('tasks, issues, site diary: create/edit/complete/delete and reload',()=>withPage(async page=>{
- const date=await seed(page);await page.getByRole('button',{name:'+ Task',exact:true}).click();await fill(page,'#taskDlg',{title:'Call plumber'});await page.locator('#taskDlg button[type="submit"]').click();
+ const date=await seed(page);await page.locator('#myday .toolbar').getByRole('button',{name:'+ Task',exact:true}).click();await fill(page,'#taskDlg',{title:'Call plumber'});await page.locator('#taskDlg button[type="submit"]').click();
  await page.evaluate(()=>openMyDayTask(db.tasks[0].id));await fill(page,'#taskDlg',{title:'Call electrician'});await page.locator('#taskDlg button[type="submit"]').click();await page.evaluate(()=>toggleMyDayTask(db.tasks[0].id));assert.equal(await page.evaluate(()=>db.tasks[0].done),true);
  await page.evaluate(()=>openForm('issues'));await fill(page,'#dlg',{issue:'Broken window',area:'Level 1',due:date});await saveGeneral(page);await page.evaluate(()=>openForm('issues',0));await fill(page,'#dlg',{notes:'Repair booked'});await saveGeneral(page);
  await page.evaluate(d=>{setSiteDay(d);openDailyFormForSiteDay()},date);await fill(page,'#dlg',{completed:'Frame erected',notCompleted:'Glazing',notCompletedReason:'Awaiting glass'});await saveGeneral(page);
@@ -220,4 +220,36 @@ test('cloud client recovery and incoming updates preserve local edits (mock RPC)
    sb={rpc:async()=>({error:null})};await pushCloud();const saved=lastCloudJson===JSON.stringify(db);sb=null;cloudCode='';return{incoming,pending,recovered,saved};
  });
  assert.deepEqual(result,{incoming:'Remote updated job',pending:'Local pending edit',recovered:true,saved:true});await page.reload();assert.equal(await page.evaluate(()=>db.jobs[0].name),'Local pending edit');
+}));
+
+test('attendance picker, search and absence preserve people and actual hours',()=>withPage(async page=>{
+ const date=await seed(page);await booking(page,date);await page.evaluate(d=>{setSiteDay(d);showSub('build','signin')},date);
+ await page.evaluate(()=>setSiteAttendance(0,'absent'));assert.equal(await page.evaluate(()=>currentSiteSnapshotRows()[0].absent),true);assert.equal(await page.evaluate(()=>currentSiteSnapshotRows()[0].actual),0);
+ await page.locator('#siteAttendanceSearch').fill('no match');assert.equal(await page.locator('#siteSnapshotRows tr:visible').count(),0);assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().length),1);
+ await page.locator('#siteAttendanceSearch').fill('');await page.evaluate(()=>addSiteSnapshotRow());await page.locator('#sitePeopleSearch').fill('Alpha');await page.locator('#sitePeopleResults button').click();
+ assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().length),2);assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().find(r=>r.name==='Alpha Trade').actual),0);
+ await page.evaluate(()=>addManualSiteSnapshotRow());await fill(page,'#siteManualDlg',{name:'Visitor Jane',position:'Inspector'});await page.locator('#siteManualDlg button[type="submit"]').click();
+ assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().find(r=>r.name==='Visitor Jane').actual),0);await page.reload();assert.equal(await page.evaluate(d=>db.siteSnapshots.find(s=>s.date===d).rows.length,date),3);
+}));
+test('material search and status filters retain original edit indexes',()=>withPage(async page=>{
+ await seed(page);await page.evaluate(()=>{db.materials=[{item:'Delivered timber',status:'Delivered',cost:20},{item:'Pending concrete',supplier:'Concrete Co',status:'Ordered',cost:30}];persist();showSub('build','materials')});
+ assert.match(await page.locator('#materialsTable').innerText(),/Pending concrete/);assert.doesNotMatch(await page.locator('#materialsTable').innerText(),/Delivered timber/);
+ await page.locator('#materialSearch').fill('Concrete Co');await page.locator('#materialsTable').getByRole('button',{name:'Edit Details',exact:true}).click();assert.equal(await page.locator('#dlg [name="item"]').inputValue(),'Pending concrete');await page.locator('#dlg').getByRole('button',{name:'Cancel',exact:true}).click();
+ await page.locator('#materialSearch').fill('');await page.locator('[data-material-filter="complete"]').click();assert.match(await page.locator('#materialsTable').innerText(),/Delivered timber/);assert.equal(await page.evaluate(()=>db.materials.length),2);
+}));
+test('task responsibility and priority survive editing and reload',()=>withPage(async page=>{
+ await seed(page);await page.evaluate(()=>openMyDayTask());await fill(page,'#taskDlg',{title:'Safety check',responsible:'Jane'});await page.locator('#taskDlg [name="priority"]').selectOption('Urgent');await page.locator('#taskDlg button[type="submit"]').click();
+ assert.match(await page.locator('#myDayContent').innerText(),/Jane/);assert.match(await page.locator('#myDayContent').innerText(),/Urgent/);await page.reload();await page.evaluate(()=>openMyDayTask(db.tasks[0].id));assert.equal(await page.locator('#taskDlg [name="responsible"]').inputValue(),'Jane');assert.equal(await page.locator('#taskDlg [name="priority"]').inputValue(),'Urgent');
+}));
+for(const width of [360,390,430])test(`diary Save stays visible at ${width}px and in a short viewport`,()=>withPage(async page=>{
+ await seed(page);await page.evaluate(()=>openDailyFormForSiteDay());assert.equal(await page.locator('#dlg .diary-additional').evaluate(el=>el.open),false);
+ for(const height of [844,500]){await page.setViewportSize({width,height});const box=await page.locator('#dlg button[value="default"]').boundingBox();assert.ok(box.y>=0&&box.y+box.height<=height,JSON.stringify(box));assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+ await fill(page,'#dlg',{completed:'Work recorded',delays:'Hidden field retained'});await saveGeneral(page);assert.equal(await page.evaluate(()=>db.daily[0].delays),'Hidden field retained');
+},{mobile:true,viewport:{width,height:844}}));
+test('Programme day shortcuts retain selected day and diary suggestions are explicit',()=>withPage(async page=>{
+ const date=await seed(page);await activity(page,date);await page.evaluate(d=>openProgrammeDay(d),date);await page.locator('#programmeDayDlg').getByRole('button',{name:'Site Diary',exact:true}).click();assert.equal(await page.locator('#diaryDayPicker').inputValue(),date);
+ await page.evaluate(()=>openDailyFormForSiteDay());assert.equal(await page.locator('#dlg [name="completed"]').inputValue(),'');await fill(page,'#dlg',{completed:'Existing draft'});await page.evaluate(()=>appendDiaryActivity(0));assert.equal(await page.locator('#dlg [name="completed"]').inputValue(),'Existing draft\nFrame construction');assert.equal(await page.evaluate(()=>db.daily.length),0);
+}));
+test('failed browser storage reports failure without a success message',()=>withPage(async page=>{
+ await seed(page);const result=await page.evaluate(()=>{const original=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new Error('Quota exceeded')};try{return persist('Completed successfully')}finally{Storage.prototype.setItem=original}});assert.equal(result,false);assert.match(await page.locator('#appFeedback').innerText(),/Could not save/);assert.doesNotMatch(await page.locator('#appFeedback').innerText(),/Completed successfully/);
 }));

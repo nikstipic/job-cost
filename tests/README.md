@@ -21,3 +21,8 @@ The suite covers persistence and legacy data, navigation, activities, resource
 ranges, labour/trade/hire schedules, popup actions, attendance and actual hours,
 workspace isolation, live costs and diary updates, tasks, issues, materials,
 estimating, deletion/reindexing, working-day duration and daylight-saving dates.
+
+UX checks also cover attendance search/picker/absence, material filters and edit
+indexes, task responsibility/priority, explicit diary suggestions, storage failure
+feedback, and visible diary Save controls at 360/390/430px with short viewports.
+See [UX_REVIEW.md](../UX_REVIEW.md) for the audit and validation limits.
