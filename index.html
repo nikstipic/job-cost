@@ -625,7 +625,8 @@ const directoryPages=[['directoryTrades','Trades'],['directoryLabour','Labour'],
 const labels={dashboard:'Dashboard',myday:'My Day',price:'Pricing',build:'Build',money:'Money',directory:'Directory',pricing:'Pricing Overview',overview:'Build Overview',estimating:'Estimating',jobs:'Job Setup',costs:'Budget / Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Programme',issues:'Issues',signin:'Site Sign-In',daily:'Site Diary',claims:'Progress Claim'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
-function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();scheduleCloudPush()}
+function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();refreshSiteSnapshotFromProgramme();scheduleCloudPush()}
+function refreshSiteSnapshotFromProgramme(){let page=document.getElementById('signin');if(!page||!page.classList.contains('active'))return;let date=activeSiteDay||activeSiteSnapshotDate||document.getElementById('siteSnapshotDate')?.value||new Date().toLocaleDateString('en-CA');let saved=(db.siteSnapshots||[]).find(x=>x.date===date),current=currentSiteSnapshotRows(),base=current.length?current:(saved?.rows||[]),rows=mergeBookedSnapshotRows(date,base);renderSiteSnapshotRows(rows)}
 function currentRole(){return document.getElementById('role')?.value||'Management'}
 function nav(){
   let supervisor=currentRole()==='Site Supervisor',navPages=supervisor?['myday','build']:pages,el=document.getElementById('nav');
@@ -1813,7 +1814,8 @@ const directoryPages=[['directoryTrades','Trades'],['directoryLabour','Labour'],
 const labels={dashboard:'Dashboard',myday:'My Day',price:'Pricing',build:'Build',money:'Money',directory:'Directory',pricing:'Pricing Overview',overview:'Build Overview',estimating:'Estimating',jobs:'Job Setup',costs:'Budget / Costs',materials:'Materials',trades:'Trades',hire:'Hire / Plant',labour:'Labour',bookings:'Programme',issues:'Issues',signin:'Site Sign-In',daily:'Site Diary',claims:'Progress Claim'};
 let currentType='';let editingIndex=null;
 function money(n){return new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(+n||0)}
-function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();scheduleCloudPush()}
+function persist(){saveWorkspaceStore();renderWorkspaceSwitcher();render();refreshSiteSnapshotFromProgramme();scheduleCloudPush()}
+function refreshSiteSnapshotFromProgramme(){let page=document.getElementById('signin');if(!page||!page.classList.contains('active'))return;let date=activeSiteDay||activeSiteSnapshotDate||document.getElementById('siteSnapshotDate')?.value||new Date().toLocaleDateString('en-CA');let saved=(db.siteSnapshots||[]).find(x=>x.date===date),current=currentSiteSnapshotRows(),base=current.length?current:(saved?.rows||[]),rows=mergeBookedSnapshotRows(date,base);renderSiteSnapshotRows(rows)}
 function currentRole(){return document.getElementById('role')?.value||'Management'}
 function nav(){
   let supervisor=currentRole()==='Site Supervisor',navPages=supervisor?['myday','build']:pages,el=document.getElementById('nav');
