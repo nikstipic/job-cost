@@ -7,6 +7,8 @@
 3. Adjust exceptions by searching for a name or scrolling the compact attendance list. Actual hours, attendance, work area, activity and other existing details remain editable.
 4. Press **Save Day**. Feedback shows present people, explicitly absent people and total actual hours.
 
+Use **Select a worker** to choose an alphabetical name from the selected day. Choosing a name shows only that person and selects them for the hours action, replacing the previous bulk selection. **All names** restores the full list without changing recorded attendance. Typing in the search field clears the name filter; opening another date resets it. Unexpected people can still be added through **Add Person / Trade**.
+
 Alternatively, use **Select All**, individual selection checkboxes, or **Select group**, then **Apply to N selected**. Group names come from that day's roles and crews; repeated names are deduplicated. Selecting a group replaces the current selection. Select All includes every entry for the date, including entries hidden by attendance search. The displayed selected count includes those hidden entries.
 
 ## Safeguards
@@ -29,6 +31,6 @@ Mobile rows keep name, selection, status, actual hours and arrival/absence actio
 
 Automated tests cover a 40-worker crew plus scheduled trade and plant, bulk filling, individual early departure/absence/overtime exceptions, original-date history, snapshot-derived labour hours, persistence/reload, group selection, selection hidden by search, default protection, cancelled/confirmed overwrite, temporary selection exclusion from stored data, job-specific defaults, unrecorded future expectations, unexpected-person exclusion, correcting absence, and phone interactions at 360/390/430px.
 
-All 40 regression tests pass, with the seven bulk attendance checks rerun after the final default/protection adjustment. The complete regression suite also retains Programme dragging/date clicks, booking/Remove Future/Delete, labour/trade/hire scheduling, costs, diary, issues, tasks, materials, estimating, workspace isolation and mocked cloud recovery checks. Run `npm test --prefix tests`.
+All 42 regression tests pass, including desktop and phone name-selector checks for alphabetical names, selecting and applying hours to only the chosen worker, returning to all names, search interaction and resetting on a new date. The complete regression suite also retains Programme dragging/date clicks, booking/Remove Future/Delete, labour/trade/hire scheduling, costs, diary, issues, tasks, materials, estimating, workspace isolation and mocked cloud recovery checks. Run `npm test --prefix tests`.
 
 Screenshots were inspected using a 40-worker fixture. Layout measurements found no page-width overflow at 360/390/430/1440px. Chromium phone emulation is used; physical-device keyboards and production multi-device synchronization were not tested. No production data is written by the tests, and these repository changes have not been deployed.
