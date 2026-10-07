@@ -865,6 +865,7 @@ function addBookingFromProgrammeDay(){let date=activeProgrammeDay;if(!date)retur
 
 function editBookingFromProgrammeDay(i){let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();editBooking(i)}
 function deleteBookingFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;if(!confirm('Delete this resource booking?'))return;let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();db.bookings.splice(i,1);persist()}
+function removeBookingFutureFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;let from=activeProgrammeDay||new Date().toLocaleDateString('en-CA'),start=b.date||'',end=b.endDate||start;if(!confirm('Remove '+bookingOwner(b)+' from '+fmtDate(from)+' forward?\n\nEarlier booked/worked dates will stay in the system.'))return;if(start>=from){db.bookings.splice(i,1)}else if(end>=from){b.endDate=programmeAddDays(from,-1)}let dlg=document.getElementById('programmeDayDlg');persist();if(dlg&&dlg.open)openProgrammeDay(from)}
 function openProgrammeDay(date){
  activeProgrammeDay=date;
  let d=programmeDate(date),cal=constructionDayInfo(date);
@@ -887,7 +888,7 @@ function openProgrammeDay(date){
    }
    if(bookings.length){
      let groups={};bookings.forEach(b=>(groups[b.group||'Other']??=[]).push(b));
-     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+'<small>'+((b.endDate&&b.endDate!==b.date)?fmtDate(b.date)+' → '+fmtDate(b.endDate):fmtDate(b.date))+(b.time?' • '+formatMyDayTime(b.time):'')+'</small></div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
+     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+'<small>'+((b.endDate&&b.endDate!==b.date)?fmtDate(b.date)+' → '+fmtDate(b.endDate):fmtDate(b.date))+(b.time?' • '+formatMyDayTime(b.time):'')+'</small></div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn" onclick="removeBookingFutureFromProgrammeDay('+idx+')">Remove Future</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
    }
    body.innerHTML=html;
  }
@@ -2058,6 +2059,7 @@ function addBookingFromProgrammeDay(){let date=activeProgrammeDay;if(!date)retur
 
 function editBookingFromProgrammeDay(i){let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();editBooking(i)}
 function deleteBookingFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;if(!confirm('Delete this resource booking?'))return;let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();db.bookings.splice(i,1);persist()}
+function removeBookingFutureFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;let from=activeProgrammeDay||new Date().toLocaleDateString('en-CA'),start=b.date||'',end=b.endDate||start;if(!confirm('Remove '+bookingOwner(b)+' from '+fmtDate(from)+' forward?\n\nEarlier booked/worked dates will stay in the system.'))return;if(start>=from){db.bookings.splice(i,1)}else if(end>=from){b.endDate=programmeAddDays(from,-1)}let dlg=document.getElementById('programmeDayDlg');persist();if(dlg&&dlg.open)openProgrammeDay(from)}
 function openProgrammeDay(date){
  activeProgrammeDay=date;
  let d=programmeDate(date),cal=constructionDayInfo(date);
@@ -2080,7 +2082,7 @@ function openProgrammeDay(date){
    }
    if(bookings.length){
      let groups={};bookings.forEach(b=>(groups[b.group||'Other']??=[]).push(b));
-     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+(b.time?'<small>Time: '+formatMyDayTime(b.time)+'</small>':'')+'</div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
+     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+(b.time?'<small>Time: '+formatMyDayTime(b.time)+'</small>':'')+'</div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn" onclick="removeBookingFutureFromProgrammeDay('+idx+')">Remove Future</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
    }
    body.innerHTML=html;
  }
