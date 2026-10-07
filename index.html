@@ -934,7 +934,7 @@ function programmeResizeActivity(id,targetDate,edge){
  if(edge==='end'&&days&&deps.length)moveDeps=confirm('This activity has '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+'.\n\nMove the dependent activities by the same '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+'?');
  Object.assign(a,draft);if(moveDeps)programmeShiftDependents(id,days);persist()
 }
-function programmeBookingKey(b){return (b.group||'Other')+'|'+bookingOwner(b)+'|'+(b.category||'')+'|'+(b.details||'')}
+function programmeBookingKey(b){return (b.group||'Other')+'|'+String(bookingOwner(b)||'').trim().toLowerCase()}
 function programmeMoveBookingGroup(key,targetDate){
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key);if(!items.length)return;
  if(items.some(b=>b.completed||b.status==='Completed')){alert('Completed resource bookings cannot be moved. Reopen them first if you need to reschedule them.');return}
@@ -2120,7 +2120,7 @@ function programmeResizeActivity(id,targetDate,edge){
  if(edge==='end'&&days&&deps.length)moveDeps=confirm('This activity has '+deps.length+' dependent activit'+(deps.length===1?'y':'ies')+'.\n\nMove the dependent activities by the same '+Math.abs(days)+' day'+(Math.abs(days)===1?'':'s')+'?');
  Object.assign(a,draft);if(moveDeps)programmeShiftDependents(id,days);persist()
 }
-function programmeBookingKey(b){return (b.group||'Other')+'|'+bookingOwner(b)+'|'+(b.category||'')+'|'+(b.details||'')}
+function programmeBookingKey(b){return (b.group||'Other')+'|'+String(bookingOwner(b)||'').trim().toLowerCase()}
 function programmeMoveBookingGroup(key,targetDate){
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key);if(!items.length)return;
  if(items.some(b=>b.completed||b.status==='Completed')){alert('Completed resource bookings cannot be moved. Reopen them first if you need to reschedule them.');return}
