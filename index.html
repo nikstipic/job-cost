@@ -938,13 +938,13 @@ function programmeBookingKey(b){return (b.group||'Other')+'|'+bookingOwner(b)+'|
 function programmeMoveBookingGroup(key,targetDate){
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key);if(!items.length)return;
  if(items.some(b=>b.completed||b.status==='Completed')){alert('Completed resource bookings cannot be moved. Reopen them first if you need to reschedule them.');return}
- let dates=[...new Set(items.map(b=>b.date))].sort(),anchor=dates[0],days=programmeDayDiff(anchor,targetDate);if(!days)return;
+ let dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),anchor=programmeDragSourceDate||dates[0],days=programmeDayDiff(anchor,targetDate);if(!days)return;
  let owner=bookingOwner(items[0]),newDates=dates.map(d=>programmeAddDays(d,days));
  let msg='Move '+owner+' resource booking?\n\nCurrent: '+fmtDate(dates[0])+(dates.length>1?' → '+fmtDate(dates[dates.length-1]):'')+'\nNew: '+fmtDate(newDates[0])+(newDates.length>1?' → '+fmtDate(newDates[newDates.length-1]):'')+'\n\nAll '+dates.length+' booked day'+(dates.length===1?'':'s')+' will move together. Nothing will be changed unless you confirm.';
  if(!confirm(msg))return;
- items.forEach(b=>b.date=programmeAddDays(b.date,days));persist()
+ items.forEach(b=>{let oldEnd=b.endDate||b.date;b.date=programmeAddDays(b.date,days);b.endDate=programmeAddDays(oldEnd,days)});persist()
 }
-let programmeDrag=null;
+let programmeDrag=null,programmeDragSourceDate='';
 function programmeCellAtPoint(x,y){
  let el=document.elementFromPoint(x,y),cell=el&&el.closest?el.closest('.programme-cell[data-programme-date]'):null;
  return cell?cell.dataset.programmeDate:''
@@ -962,8 +962,8 @@ function programmeMilestonePointerDown(e,id,date){
 }
 function programmeBookingPointerDown(e,key,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
- let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.map(b=>b.date))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDrag={bookingKey:key,date:dates[0]||date,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:dates[0]||date,startX:e.clientX,startY:e.clientY,moved:false};
+ let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
+ programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
@@ -2120,13 +2120,13 @@ function programmeBookingKey(b){return (b.group||'Other')+'|'+bookingOwner(b)+'|
 function programmeMoveBookingGroup(key,targetDate){
  let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key);if(!items.length)return;
  if(items.some(b=>b.completed||b.status==='Completed')){alert('Completed resource bookings cannot be moved. Reopen them first if you need to reschedule them.');return}
- let dates=[...new Set(items.map(b=>b.date))].sort(),anchor=dates[0],days=programmeDayDiff(anchor,targetDate);if(!days)return;
+ let dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),anchor=programmeDragSourceDate||dates[0],days=programmeDayDiff(anchor,targetDate);if(!days)return;
  let owner=bookingOwner(items[0]),newDates=dates.map(d=>programmeAddDays(d,days));
  let msg='Move '+owner+' resource booking?\n\nCurrent: '+fmtDate(dates[0])+(dates.length>1?' → '+fmtDate(dates[dates.length-1]):'')+'\nNew: '+fmtDate(newDates[0])+(newDates.length>1?' → '+fmtDate(newDates[newDates.length-1]):'')+'\n\nAll '+dates.length+' booked day'+(dates.length===1?'':'s')+' will move together. Nothing will be changed unless you confirm.';
  if(!confirm(msg))return;
- items.forEach(b=>b.date=programmeAddDays(b.date,days));persist()
+ items.forEach(b=>{let oldEnd=b.endDate||b.date;b.date=programmeAddDays(b.date,days);b.endDate=programmeAddDays(oldEnd,days)});persist()
 }
-let programmeDrag=null;
+let programmeDrag=null,programmeDragSourceDate='';
 function programmeCellAtPoint(x,y){
  let el=document.elementFromPoint(x,y),cell=el&&el.closest?el.closest('.programme-cell[data-programme-date]'):null;
  return cell?cell.dataset.programmeDate:''
@@ -2144,8 +2144,8 @@ function programmeMilestonePointerDown(e,id,date){
 }
 function programmeBookingPointerDown(e,key,date){
  if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();
- let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.map(b=>b.date))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
- programmeDrag={bookingKey:key,date:dates[0]||date,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:dates[0]||date,startX:e.clientX,startY:e.clientY,moved:false};
+ let items=(db.bookings||[]).filter(b=>b.date&&programmeBookingKey(b)===key),dates=[...new Set(items.flatMap(b=>dateRange(b.date,b.endDate||b.date)))].sort(),bar=e.currentTarget.closest('.programme-bar')||e.currentTarget;
+ programmeDragSourceDate=date||dates[0]||'';programmeDrag={bookingKey:key,date:programmeDragSourceDate,edge:'booking-move',pointerId:e.pointerId,bar,lastDate:programmeDragSourceDate,startX:e.clientX,startY:e.clientY,moved:false};
  bar.classList.add('programme-dragging');document.body.classList.add('programme-drag-active');
  window.addEventListener('pointermove',programmePointerMove,true);window.addEventListener('pointerup',programmePointerRelease,true);window.addEventListener('pointercancel',programmePointerCancel,true)
 }
