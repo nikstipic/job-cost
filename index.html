@@ -851,7 +851,7 @@ function programmeActivityGroups(){
    completed=dates.slice(0,doneCount);
    groups.push({source:'activity',activityId:a.id,group:a.stage||'Activity',owner:a.name||'Programme Activity',category:programmeWorkerNames(a).join(', ')||'',details:[state.label,pct+'%'].join(' • '),dates,completed,status:state.label,performance:programmeActivityPerformance(a)})
  });
- let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+String(owner||'').trim().toLowerCase();if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',categories:[],detailsList:[],dates:[],completed:[]};if(b.category&&!m[key].categories.includes(b.category))m[key].categories.push(b.category);if(b.details&&!m[key].detailsList.includes(b.details))m[key].detailsList.push(b.details);m[key].dates.push(b.date);if(b.completed||b.status==='Completed')m[key].completed.push(b.date)});
+ let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+String(owner||'').trim().toLowerCase();if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',categories:[],detailsList:[],dates:[],completed:[]};if(b.category&&!m[key].categories.includes(b.category))m[key].categories.push(b.category);if(b.details&&!m[key].detailsList.includes(b.details))m[key].detailsList.push(b.details);let bookingDates=dateRange(b.date,b.endDate||b.date);m[key].dates.push(...bookingDates);if(b.completed||b.status==='Completed')m[key].completed.push(...bookingDates)});
  groups.push(...Object.values(m).map(g=>({...g,category:g.categories.join(' / '),details:g.detailsList.join(' • '),dates:[...new Set(g.dates)].sort(),completed:[...new Set(g.completed)]})));
  (db.programmeMilestones||[]).forEach(m=>{if(m.date)groups.push({source:'milestone',milestoneId:m.id,group:m.stage||'Milestone',owner:m.name||'Milestone',category:m.responsible||'',details:'Milestone',dates:[m.date],completed:[],status:'Milestone'})});
  return groups.sort((a,b)=>(a.dates[0]||'').localeCompare(b.dates[0]||''))
@@ -863,6 +863,7 @@ function addActivityFromProgrammeDay(){let date=activeProgrammeDay;if(!date)retu
 function addBookingFromProgrammeDay(){let date=activeProgrammeDay;if(!date)return;document.getElementById('programmeDayDlg').close();openBookingForm(date)}
 
 function editBookingFromProgrammeDay(i){let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();editBooking(i)}
+function deleteBookingFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;if(!confirm('Delete this resource booking?'))return;let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();db.bookings.splice(i,1);persist()}
 function openProgrammeDay(date){
  activeProgrammeDay=date;
  let d=programmeDate(date),cal=constructionDayInfo(date);
@@ -885,7 +886,7 @@ function openProgrammeDay(date){
    }
    if(bookings.length){
      let groups={};bookings.forEach(b=>(groups[b.group||'Other']??=[]).push(b));
-     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+'<small>'+((b.endDate&&b.endDate!==b.date)?fmtDate(b.date)+' → '+fmtDate(b.endDate):fmtDate(b.date))+(b.time?' • '+formatMyDayTime(b.time):'')+'</small></div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button></div></div>'}).join('')+'</div>').join('');
+     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+'<small>'+((b.endDate&&b.endDate!==b.date)?fmtDate(b.date)+' → '+fmtDate(b.endDate):fmtDate(b.date))+(b.time?' • '+formatMyDayTime(b.time):'')+'</small></div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
    }
    body.innerHTML=html;
  }
@@ -2032,7 +2033,7 @@ function programmeActivityGroups(){
    completed=dates.slice(0,doneCount);
    groups.push({source:'activity',activityId:a.id,group:a.stage||'Activity',owner:a.name||'Programme Activity',category:programmeWorkerNames(a).join(', ')||'',details:[state.label,pct+'%'].join(' • '),dates,completed,status:state.label,performance:programmeActivityPerformance(a)})
  });
- let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+String(owner||'').trim().toLowerCase();if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',categories:[],detailsList:[],dates:[],completed:[]};if(b.category&&!m[key].categories.includes(b.category))m[key].categories.push(b.category);if(b.details&&!m[key].detailsList.includes(b.details))m[key].detailsList.push(b.details);m[key].dates.push(b.date);if(b.completed||b.status==='Completed')m[key].completed.push(b.date)});
+ let m={};(db.bookings||[]).forEach(b=>{if(!b.date)return;let owner=bookingOwner(b),key=(b.group||'Other')+'|'+String(owner||'').trim().toLowerCase();if(!m[key])m[key]={source:'booking',bookingKey:key,group:b.group||'Other',owner,category:b.category||'',details:b.details||'',categories:[],detailsList:[],dates:[],completed:[]};if(b.category&&!m[key].categories.includes(b.category))m[key].categories.push(b.category);if(b.details&&!m[key].detailsList.includes(b.details))m[key].detailsList.push(b.details);let bookingDates=dateRange(b.date,b.endDate||b.date);m[key].dates.push(...bookingDates);if(b.completed||b.status==='Completed')m[key].completed.push(...bookingDates)});
  groups.push(...Object.values(m).map(g=>({...g,category:g.categories.join(' / '),details:g.detailsList.join(' • '),dates:[...new Set(g.dates)].sort(),completed:[...new Set(g.completed)]})));
  (db.programmeMilestones||[]).forEach(m=>{if(m.date)groups.push({source:'milestone',milestoneId:m.id,group:m.stage||'Milestone',owner:m.name||'Milestone',category:m.responsible||'',details:'Milestone',dates:[m.date],completed:[],status:'Milestone'})});
  return groups.sort((a,b)=>(a.dates[0]||'').localeCompare(b.dates[0]||''))
@@ -2044,6 +2045,7 @@ function addActivityFromProgrammeDay(){let date=activeProgrammeDay;if(!date)retu
 function addBookingFromProgrammeDay(){let date=activeProgrammeDay;if(!date)return;document.getElementById('programmeDayDlg').close();openBookingForm(date)}
 
 function editBookingFromProgrammeDay(i){let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();editBooking(i)}
+function deleteBookingFromProgrammeDay(i){let b=db.bookings?.[i];if(!b)return;if(!confirm('Delete this resource booking?'))return;let dlg=document.getElementById('programmeDayDlg');if(dlg&&dlg.open)dlg.close();db.bookings.splice(i,1);persist()}
 function openProgrammeDay(date){
  activeProgrammeDay=date;
  let d=programmeDate(date),cal=constructionDayInfo(date);
@@ -2066,7 +2068,7 @@ function openProgrammeDay(date){
    }
    if(bookings.length){
      let groups={};bookings.forEach(b=>(groups[b.group||'Other']??=[]).push(b));
-     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+(b.time?'<small>Time: '+formatMyDayTime(b.time)+'</small>':'')+'</div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button></div></div>'}).join('')+'</div>').join('');
+     html+=Object.entries(groups).map(([group,a])=>'<div class="programme-day-group"><h3>'+group+'</h3>'+a.map(b=>{let done=b.completed||b.status==='Completed';let idx=db.bookings.indexOf(b);return '<div class="programme-day-item"><div><b>'+bookingOwner(b)+'</b><span>'+[b.category,b.details].filter(Boolean).join(' • ')+'</span>'+(b.time?'<small>Time: '+formatMyDayTime(b.time)+'</small>':'')+'</div><div class="programme-day-item-actions"><span class="'+(done?'status-paid':'status-booked')+'">'+(done?'Completed':(b.status||'Programmed'))+'</span><button type="button" class="btn" onclick="editBookingFromProgrammeDay('+idx+')">Edit</button><button type="button" class="btn red" onclick="deleteBookingFromProgrammeDay('+idx+')">Delete</button></div></div>'}).join('')+'</div>').join('');
    }
    body.innerHTML=html;
  }
