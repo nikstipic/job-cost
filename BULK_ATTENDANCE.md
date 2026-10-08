@@ -15,7 +15,7 @@ On desktop, press and hold the mouse on a selection checkbox (or its selection c
 
 ## Safeguards
 
-There is one green hours action beside Hours: **Apply Nh to N selected**. The separate whole-day apply button has been removed. With no selection, Apply is disabled; it never falls back to changing everyone. Selection buttons only select people and do not record attendance or hours.
+There is one green hours action beside Hours: **Apply Nh to N selected**. The separate whole-day apply button has been removed. With no selection, Apply is disabled; it never falls back to changing everyone. Select buttons only select people and do not record attendance or hours. Clear Selection & On Site also removes the day’s on-site marks while keeping entered hours and absent statuses.
 
 **Keep existing attendance & hours** is checked by default. Bulk actions skip rows already marked present/absent or containing positive actual hours. The feedback states how many existing records were kept. To deliberately replace them, uncheck that protection; a confirmation identifies the affected date, existing-record count and sample names/hours. Cancelling leaves the records and remembered standard hours unchanged.
 
@@ -46,3 +46,5 @@ Manual entries offer start and end dates (inclusive, including weekends) and an 
 **Select All On Site** replaces the selection with everyone marked on site for the selected day, including manual people. It excludes expected-only, off-site and absent people, even when a name/search filter hides them. It changes selection only; use Apply to set hours. Existing-hours protection still applies.
 
 **Mark All Present** confirms the count and date, then marks everyone listed that day present, including hidden rows and manual people. The warning identifies absent statuses that will be replaced. Hours and selections stay unchanged, and other dates are untouched. Existing-attendance protection continues to apply to the separate hours action.
+
+**Clear Selection & On Site** clears selections and all on-site marks for the selected day, including hidden/manual rows. If present people have entered hours, it asks for confirmation; those hours are retained, as are absent statuses. **Mark All Present** includes manual and picker additions even when hidden by name/search filters.
