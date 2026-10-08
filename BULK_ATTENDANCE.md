@@ -42,3 +42,7 @@ All 49 regression tests pass, including desktop and phone checks that the single
 Screenshots were inspected using a 40-worker fixture. Layout measurements found no page-width overflow at 360/390/430/1440px. Chromium phone emulation is used; physical-device keyboards and production multi-device synchronization were not tested. No production data is written by the tests, and these repository changes have not been deployed.
 
 Manual entries offer start and end dates (inclusive, including weekends) and an **Add to Programme as expected Labour** option. Both dates default to the selected site day. Programme bookings retain the manual person’s name, role and crew. Expected days start with zero actual hours and no attendance; record each day separately. Uncheck the Programme option for a one-off visitor. Existing historical attendance is retained.
+
+**Select All On Site** replaces the selection with everyone marked on site for the selected day, including manual people. It excludes expected-only, off-site and absent people, even when a name/search filter hides them. It changes selection only; use Apply to set hours. Existing-hours protection still applies.
+
+**Mark All Present** confirms the count and date, then marks everyone listed that day present, including hidden rows and manual people. The warning identifies absent statuses that will be replaced. Hours and selections stay unchanged, and other dates are untouched. Existing-attendance protection continues to apply to the separate hours action.
