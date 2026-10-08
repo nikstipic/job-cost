@@ -12,9 +12,9 @@ The runner uses `/usr/bin/chromium` or `/usr/bin/google-chrome` when available. 
 Playwright's browser from this directory with `npx playwright install chromium`.
 
 Tests start their own local HTTP server and use isolated browser storage. They
-never contact the production Supabase database: the CDN request is deliberately
-blocked to also verify that local functionality survives an unavailable cloud
-client. Desktop tests use actual mouse pointer dragging; mobile tests use a touch
+never contact the production Supabase database: both the CDN and Supabase
+endpoint are blocked by default. Sharing tests handle the RPC endpoint with an
+in-memory mock, including the direct HTTP fallback when the CDN is unavailable. Desktop tests use actual mouse pointer dragging; mobile tests use a touch
 viewport. Both run in the Australia/Sydney timezone.
 
 The suite covers persistence and legacy data, navigation, activities, resource
@@ -34,3 +34,9 @@ defaults and mobile Save Day. See [BULK_ATTENDANCE.md](../BULK_ATTENDANCE.md).
 Attendance selection also covers real mouse range dragging, deselection, filtered
 rows, edge scrolling, cancellation on date changes, ordinary clicks/keyboard
 selection, and unchanged phone touch handling.
+
+Sharing checks include two isolated browsers receiving task/attendance updates,
+reconnection on reload, invitation links, clipboard copying, separate joined
+workspaces, offline retries, conflict backups, safe editor refresh, stale request
+rejection, malformed payloads, deadlines and phone dialogs. See
+[SHARING.md](../SHARING.md) for the behaviour and backend limitations.

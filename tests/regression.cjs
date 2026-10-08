@@ -14,11 +14,12 @@ before(async()=>{
  browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox']});
 });
 after(async()=>{await browser?.close();await new Promise(resolve=>server.close(resolve))});
-async function withPage(run,{mobile=false,legacy=null,viewport=null}={}){
+async function withPage(run,{mobile=false,legacy=null,viewport=null,cloudBackend=null}={}){
  const context=await browser.newContext({viewport:viewport||(mobile?{width:390,height:844}:{width:1500,height:1000}),isMobile:mobile,hasTouch:mobile,timezoneId:'Australia/Sydney'});
  const page=await context.newPage(),errors=[];page.setDefaultTimeout(5000);
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().startsWith('Failed to load resource'))errors.push(m.text())});
  await page.route('https://cdn.jsdelivr.net/**',route=>route.abort());
+ await page.route('https://tlskmedykrpdnjscbyxo.supabase.co/**',route=>cloudBackend?cloudBackend.handle(route):route.abort());
  page.on('dialog',dialog=>dialog.accept());
  if(legacy)await page.addInitScript(data=>{if(!localStorage.getItem('__seeded')){localStorage.setItem('mmdb',JSON.stringify(data));localStorage.setItem('__seeded','1')}},legacy);
  try{assert.equal((await page.goto(url)).status(),200);await page.waitForFunction(()=>appReady);await run(page);assert.deepEqual(errors,[],'No runtime or render errors')}finally{await context.close()}
@@ -55,9 +56,9 @@ test('legacy data and unknown fields survive startup and reload',()=>withPage(as
  assert.equal(await page.evaluate(()=>db.bookings.length),1);
  await page.reload();await page.waitForFunction(()=>appReady);assert.equal(await page.evaluate(()=>db.jobs[0].custom),'keep');
 },{legacy:{jobs:[{name:'Legacy job',custom:'keep'}],bookings:[{group:'Site Issue',date:'2026-01-01',details:'Keep historical booking'}]}}));
-test('navigation, missing optional cloud client, and workspace switching',()=>withPage(async page=>{
+test('navigation, unavailable cloud service, and workspace switching',()=>withPage(async page=>{
  for(const name of ['Pricing','Build','Money','Directory','My Day']){await page.locator('#nav').getByRole('button',{name,exact:true}).click();assert.equal(await page.locator('.page.active').count(),1)}
- await page.getByRole('button',{name:'Share / Sync',exact:true}).click();await page.getByRole('button',{name:'Create Code From This Device'}).click();assert.match(await page.locator('#syncMsg').innerText(),/could not load/);await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).click();
+ await page.getByRole('button',{name:'Share / Sync',exact:true}).click();await page.getByRole('button',{name:'Create Code From This Device'}).click();await page.waitForFunction(()=>document.getElementById('syncMsg').textContent.includes('Could not connect'));assert.match(await page.locator('#syncMsg').innerText(),/Could not connect/);await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).click();
  const old=await page.locator('#jobWorkspaceSelect').inputValue();page.removeAllListeners('dialog');page.once('dialog',d=>d.accept('New workspace'));await page.getByRole('button',{name:'+ New Job',exact:true}).click();assert.match(await page.locator('#jobWorkspaceSelect').innerText(),/New workspace/);await page.locator('#jobWorkspaceSelect').selectOption(old);assert.equal(await page.locator('#jobWorkspaceSelect').inputValue(),old);
 }));
 test('activity create/edit/save, worker expectations, duration, and persistence',()=>withPage(async page=>{
@@ -217,7 +218,7 @@ test('cloud client recovery and incoming updates preserve local edits (mock RPC)
    const remote=JSON.parse(lastCloudJson);remote.jobs[0].name='Remote updated job';sb={rpc:async()=>({data:remote,error:null})};await pullCloud();
    const incoming=db.jobs[0].name;clearTimeout(cloudPushTimer);db.jobs[0].name='Local pending edit';saveWorkspaceStore();await pullCloud();const pending=db.jobs[0].name;clearTimeout(cloudPushTimer);
    sb={rpc:async()=>{throw new Error('Simulated network failure')}};await pushCloud();const recovered=!cloudBusy;
-   sb={rpc:async()=>({error:null})};await pushCloud();const saved=lastCloudJson===JSON.stringify(db);sb=null;cloudCode='';return{incoming,pending,recovered,saved};
+   sb={rpc:async(name)=>({data:name==='load_management_job'?remote:null,error:null})};await pushCloud();const saved=lastCloudJson===JSON.stringify(db);sb=null;cloudCode='';return{incoming,pending,recovered,saved};
  });
  assert.deepEqual(result,{incoming:'Remote updated job',pending:'Local pending edit',recovered:true,saved:true});await page.reload();assert.equal(await page.evaluate(()=>db.jobs[0].name),'Local pending edit');
 }));
@@ -328,3 +329,85 @@ test('drag selection scrolls through a large crew and cancels safely when the da
  await page.mouse.move(box.x+11,box.y+11);await page.mouse.down();await page.mouse.move(box.x+11,980,{steps:8});await page.waitForFunction(()=>currentSiteSnapshotRows().filter(r=>r._selected).length>=10);await page.mouse.up();assert.ok(await page.evaluate(()=>scrollY)>before,'Dragging near the bottom scrolls the page');assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().some(r=>r.actual>0||r.in)),false);
  await page.locator('#siteSnapshotRows tr').nth(2).scrollIntoViewIfNeeded();const start=await page.locator('#siteSnapshotRows tr').nth(2).locator('[name="bulkSelect"]').boundingBox();await page.mouse.move(start.x+11,start.y+11);await page.mouse.down();await page.mouse.move(start.x+11,start.y+45);assert.ok(await page.evaluate(()=>attendanceSelectionDrag?.active));await page.evaluate(d=>setSiteDay(programmeAddDays(d,1)),date);assert.equal(await page.evaluate(()=>attendanceSelectionDrag),null);assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().some(r=>r._selected||r.actual>0||r.in)),false);await page.mouse.up();
 }));
+
+function mockSharedServer(){
+ const server={jobs:new Map(),requests:[],fail:false,saveFail:false,hold:null};
+ server.handle=async route=>{const name=route.request().url().split('/').pop(),args=route.request().postDataJSON();server.requests.push({name,args});if(server.hold)await server.hold;if(server.fail)return route.abort();
+   let data=null,status=200;if(name==='create_management_job'){if(server.jobs.has(args.p_code)){status=409;data={message:'Code in use'}}else{server.jobs.set(args.p_code,args.p_data);data=true}}
+   else if(name==='load_management_job')data=server.jobs.get(args.p_code)||null;
+   else if(name==='save_management_job'){if(server.saveFail){status=503;data={message:'Temporary save failure'}}else{server.jobs.set(args.p_code,args.p_data);data=true}}
+   else{status=404;data={message:'Unknown RPC'}}await route.fulfill({status,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':'*'}});
+ };return server;
+}
+async function connectFixtureCloud(page,server,code='TEST'){
+ const date=await seed(page),data=await page.evaluate(()=>JSON.parse(JSON.stringify(db)));server.jobs.set(code,data);
+ await page.evaluate(async code=>{cloudCode=code;lastCloudJson=JSON.stringify(db);workspaceStore.items[workspaceStore.active].cloudFingerprint=await cloudFingerprint(db);saveWorkspaceStore()},code);return date;
+}
+test('shared job restarts automatic polling on reload and direct RPC works without the CDN',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);await page.reload();await page.waitForFunction(()=>cloudTimer&&document.getElementById('cloudState').dataset.state==='synced');assert.equal(await page.evaluate(()=>sb),null,'Direct RPC fallback is used');
+   backend.jobs.get('TEST').jobs[0].name='Updated by other person';await page.waitForFunction(()=>db.jobs[0].name==='Updated by other person');assert.match(await page.locator('#cloudState').innerText(),/Synced/);assert.ok(backend.requests.filter(r=>r.name==='load_management_job').length>=2);
+ },{cloudBackend:backend});
+});
+test('job link joins into a separate workspace and Stop Syncing remains stopped after reload',async()=>{
+ const backend=mockSharedServer(),shared={jobs:[{name:'Team job'}],labour:[]};backend.jobs.set('LINK-123',shared);
+ await withPage(async page=>{
+   const oldId=await page.evaluate(()=>workspaceStore.active);await page.goto(url+'#job=LINK-123');await page.waitForFunction(()=>document.getElementById('joinCode').value==='LINK-123');assert.equal(await page.locator('#joinCode').inputValue(),'LINK-123');assert.equal(await page.locator('#syncDlg').evaluate(el=>el.open),true);
+   await page.getByRole('button',{name:'Join With Code',exact:true}).click();await page.waitForFunction(()=>cloudCode==='LINK-123'&&db.jobs[0].name==='Team job');assert.ok(await page.evaluate(id=>!!workspaceStore.items[id],oldId));assert.equal(await page.evaluate(()=>Object.keys(workspaceStore.items).length),2);assert.match(await page.locator('#sharedJobLink').inputValue(),/#job=LINK-123/);await page.context().grantPermissions(['clipboard-read','clipboard-write']);await page.waitForFunction(()=>!cloudBusy);await page.getByRole('button',{name:'Copy Job Link',exact:true}).click();assert.match(await page.evaluate(()=>navigator.clipboard.readText()),/#job=LINK-123/);
+   await page.getByRole('button',{name:'Stop Syncing',exact:true}).click();await page.reload();await page.waitForFunction(()=>appReady);assert.equal(await page.evaluate(()=>cloudCode),'');assert.equal(await page.evaluate(()=>cloudTimer),null);assert.equal(await page.evaluate(()=>db.jobs[0].name),'Team job');
+ },{cloudBackend:backend});
+});
+test('offline and failed uploads keep changes and Sync Now retries successfully',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>false});db.jobs[0].name='Offline local edit';persist()});await page.evaluate(()=>syncNow());assert.equal(backend.jobs.get('TEST').jobs[0].name,'Regression job');assert.match(await page.locator('#cloudState').innerText(),/Offline/);
+   backend.saveFail=true;await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>true})});await page.evaluate(()=>syncNow());assert.match(await page.locator('#cloudState').innerText(),/local changes kept/);assert.equal(await page.evaluate(()=>db.jobs[0].name),'Offline local edit');assert.equal(await page.evaluate(()=>cloudBusy),false);
+   backend.saveFail=false;await page.evaluate(()=>syncNow());assert.equal(backend.jobs.get('TEST').jobs[0].name,'Offline local edit');assert.match(await page.locator('#cloudState').innerText(),/Synced/);
+ },{cloudBackend:backend});
+});
+test('concurrent changes pause uploads and resolving keeps a local backup',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);backend.jobs.get('TEST').jobs[0].name='Other person edit';await page.evaluate(()=>{db.jobs[0].name='My local edit';saveWorkspaceStore()});await page.evaluate(()=>syncNow());assert.match(await page.locator('#cloudState').innerText(),/need review/);assert.equal(backend.jobs.get('TEST').jobs[0].name,'Other person edit');assert.equal(await page.evaluate(()=>db.jobs[0].name),'My local edit');
+   await page.evaluate(()=>openSync());assert.equal(await page.locator('#syncConflict').isVisible(),true);await page.getByRole('button',{name:'Use Shared Version — Keep Local Backup',exact:true}).click();await page.waitForFunction(()=>db.jobs[0].name==='Other person edit');assert.equal(await page.evaluate(()=>Object.values(workspaceStore.items).find(w=>w.name.startsWith('Local changes backup')).data.jobs[0].name),'My local edit');assert.equal(await page.evaluate(()=>Object.values(workspaceStore.items).find(w=>w.name.startsWith('Local changes backup')).cloudCode),'');
+ },{cloudBackend:backend});
+});
+test('incoming updates wait while a form is being edited, then refresh after closing',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);await page.evaluate(()=>openForm('issues'));await fill(page,'#dlg',{issue:'Unsaved draft'});backend.jobs.get('TEST').jobs[0].name='Remote job name';await page.evaluate(()=>syncNow());assert.equal(await page.evaluate(()=>db.jobs[0].name),'Regression job');assert.equal(await page.locator('#dlg [name="issue"]').inputValue(),'Unsaved draft');assert.match(await page.locator('#cloudState').innerText(),/finish editing/);
+   await page.locator('#dlg').getByRole('button',{name:'Cancel',exact:true}).click();await page.waitForFunction(()=>db.jobs[0].name==='Remote job name');
+ },{cloudBackend:backend});
+});
+test('an old shared response cannot overwrite a different workspace',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);let release;backend.hold=new Promise(resolve=>release=resolve);await page.evaluate(()=>{window.pendingSync=syncNow()});await page.waitForFunction(()=>cloudBusy);
+   await page.evaluate(()=>{workspaceStore.items.other={name:'Other local job',data:{...blankWorkspace(),jobs:[{name:'Other local job'}]},cloudCode:''};switchWorkspace('other')});release();backend.hold=null;await page.evaluate(()=>window.pendingSync);assert.equal(await page.evaluate(()=>db.jobs[0].name),'Other local job');assert.equal(await page.evaluate(()=>cloudCode),'');assert.equal(await page.evaluate(()=>cloudBusy),false);
+ },{cloudBackend:backend});
+});
+test('two separate browsers share automatic task and attendance updates in both directions',async()=>{
+ const backend=mockSharedServer(),contexts=[],errors=[];
+ async function openPage(){const context=await browser.newContext({viewport:{width:1500,height:1000},timezoneId:'Australia/Sydney'});contexts.push(context);const page=await context.newPage();page.setDefaultTimeout(8000);page.on('pageerror',error=>errors.push(error.message));await page.route('https://cdn.jsdelivr.net/**',route=>route.abort());await page.route('https://tlskmedykrpdnjscbyxo.supabase.co/**',backend.handle);return page}
+ try{
+   const a=await openPage();await a.goto(url);await a.waitForFunction(()=>appReady);const date=await seed(a);await a.evaluate(d=>{db.programmeActivities=[{id:'work',name:'Work',plannedStart:d,plannedFinish:d,workerIds:['labour:0'],workDays:[0,1,2,3,4,5,6]}];persist();setSiteDay(d);openSync()},date);await a.getByRole('button',{name:'Create Code From This Device',exact:true}).click();await a.waitForFunction(()=>cloudCode&&document.getElementById('cloudState').dataset.state==='synced');const link=await a.locator('#sharedJobLink').inputValue();
+   const b=await openPage();await b.goto(link);await b.waitForFunction(()=>appReady);await b.getByRole('button',{name:'Join With Code',exact:true}).click();await b.waitForFunction(()=>cloudCode&&document.getElementById('cloudState').dataset.state==='synced');
+   await a.evaluate(d=>{db.tasks.push({id:'task-a',title:'Update from supervisor',date:d,done:false});persist()},date);await b.waitForFunction(()=>db.tasks.some(t=>t.id==='task-a'));
+   await a.evaluate(d=>{document.getElementById('syncDlg').close();setSiteDay(d);setSiteAttendance(0,'arrived');mobileSiteField(0,'actual',8);saveSiteSnapshot()},date);await b.waitForFunction(d=>db.siteSnapshots.find(s=>s.date===d)?.rows.find(r=>r.sourceId==='labour:0')?.actual===8,date);
+   await b.evaluate(d=>{db.tasks.push({id:'task-b',title:'Reply from the other person',date:d,done:false});persist()},date);await a.waitForFunction(()=>db.tasks.some(t=>t.id==='task-b'));assert.equal(await b.evaluate(d=>labourSiteEntries(db.labour[0]).find(entry=>entry.date===d).hours,date),8);assert.deepEqual(errors,[]);
+ }finally{await Promise.all(contexts.map(context=>context.close()))}
+});
+test('publishing a reviewed local version preserves the previous shared version as a backup',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);backend.jobs.get('TEST').jobs[0].name='Remote version';await page.evaluate(()=>{db.jobs[0].name='Local version';saveWorkspaceStore()});await page.evaluate(()=>syncNow());await page.evaluate(()=>openSync());await page.getByRole('button',{name:'Publish This Device’s Version',exact:true}).click();await page.waitForFunction(()=>!cloudConflict&&!cloudBusy);await page.evaluate(()=>syncNow());assert.equal(backend.jobs.get('TEST').jobs[0].name,'Local version');assert.equal(await page.evaluate(()=>Object.values(workspaceStore.items).find(w=>w.name.startsWith('Shared version backup')).data.jobs[0].name),'Remote version');
+ },{cloudBackend:backend});
+});
+test('malformed shared responses cannot replace the local workspace',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);backend.jobs.set('TEST',[]);await page.evaluate(()=>syncNow());assert.equal(await page.evaluate(()=>db.jobs[0].name),'Regression job');assert.match(await page.locator('#cloudState').innerText(),/local changes kept/);assert.equal(await page.evaluate(()=>cloudBusy),false);assert.equal(backend.requests.filter(r=>r.name==='save_management_job').length,0);
+ },{cloudBackend:backend});
+});
+test('cloud requests have a deadline even when a client request never resolves',()=>withPage(async page=>{
+ const result=await page.evaluate(async()=>{try{await cloudRpc({rpc:()=>new Promise(()=>{})},'load_management_job',{p_code:'TEST'},20);return 'Unexpected success'}catch(error){return error.message}});assert.equal(result,'Cloud request timed out');
+}));
+test('phone sharing controls and conflict review fit the screen with Close reachable while scrolling',async()=>{
+ const backend=mockSharedServer();await withPage(async page=>{
+   await connectFixtureCloud(page,backend);backend.jobs.get('TEST').jobs[0].name='Shared change';await page.evaluate(()=>{db.jobs[0].name='Phone edit';saveWorkspaceStore()});await page.evaluate(()=>syncNow());await page.evaluate(()=>openSync());await page.locator('#syncConflict').scrollIntoViewIfNeeded();assert.ok(await page.locator('#syncDlg').evaluate(el=>el.scrollWidth<=el.clientWidth));const close=await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).boundingBox();assert.ok(close.y>=0&&close.y+close.height<=844);assert.equal(await page.locator('#syncConflict').isVisible(),true);await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).tap();assert.equal(await page.locator('#syncDlg').evaluate(el=>el.open),false);
+ },{cloudBackend:backend,mobile:true});
+});

@@ -727,13 +727,17 @@ nav button.active,.subnav button.active{background:#16263d!important;color:#fff!
 .site-bulk-apply #siteApplySelected{font-weight:700;border:2px solid #17243b}@media(max-width:700px){#siteSelectExpected{grid-column:1/-1}}
 
 .attendance-selecting,.attendance-selecting *{user-select:none!important;cursor:crosshair!important}.site-snapshot-table tr.attendance-picked>td{background:#eaf2fc!important}.site-snapshot-table tr.attendance-picked>td:first-child{box-shadow:inset 3px 0 #315e97}.mobile-attendance-card.attendance-picked{box-shadow:inset 3px 0 #315e97}.site-snapshot-table td:first-child{cursor:crosshair;min-width:36px}.attendance-drag-hint{display:block;margin:6px 0 10px;font-size:12px;color:#475467}@media(pointer:coarse){.attendance-drag-hint{display:none}}
+
+#cloudState[data-state="error"],#cloudState[data-state="conflict"]{color:#b54708}#cloudState[data-state="synced"]{color:#067647}#syncStatus{font-weight:700}#syncLastChecked,.sync-help{font-size:12px;color:#475467}.sync-conflict{border:1px solid #d59816;background:#fffbeb;padding:12px;margin-top:12px}.sync-conflict button{min-height:44px;margin:4px 0;white-space:normal!important;max-width:100%}#sharedJobLink{font-size:13px}#syncDlg .toolbar{flex-wrap:wrap}
+
+.sync-header{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;background:#fff;z-index:20;padding:8px 0}.sync-header h2{margin:0}.sync-header button{width:auto!important;min-width:70px;min-height:44px!important}
 </style>
 </head>
 <body>
 <header><div><div class="brand">MANAGEMENT</div><div class="sub">Construction Job Control <span id="cloudState">— This device only</span></div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="job-switcher"><small>JOB</small><select id="jobWorkspaceSelect" onchange="switchWorkspace(this.value)"></select><button class="btn" onclick="createWorkspace()">+ New Job</button></div><button type="button" class="btn green" onclick="openSync()" ontouchend="event.preventDefault();openSync()">Share / Sync</button><select id="role"><option>Management</option><option>Site Supervisor</option></select></div></header>
 <nav id="nav"></nav><div id="subnav" class="subnav"></div>
 <dialog id="photoLightbox" onclick="if(event.target===this)closePhoto()"><div class="photo-wrap"><img id="largePhoto" alt="Site photo"><button type="button" class="photo-close" onclick="closePhoto()" aria-label="Close">×</button><button type="button" class="photo-nav photo-prev" onclick="event.stopPropagation();stepPhoto(-1)" aria-label="Previous photo">‹</button><button type="button" class="photo-nav photo-next" onclick="event.stopPropagation();stepPhoto(1)" aria-label="Next photo">›</button><div id="photoCounter" class="photo-counter"></div></div></dialog>
-<dialog id="syncDlg"><form method="dialog" onsubmit="return false"><h2>Share & Sync Job</h2><p class="lead">Create a code on this device, then enter the same code on another phone or computer.</p><div id="syncCurrent"></div><div class="formgrid"><label class="full">Job Code<input id="joinCode" maxlength="12" placeholder="e.g. MGT-A7K4P9" style="text-transform:uppercase"></label></div><div class="toolbar" style="margin-top:16px"><button type="button" class="primary green" onclick="createCloudJob()">Create Code From This Device</button><button type="button" class="primary" onclick="joinCloudJob()">Join With Code</button><button type="button" class="btn red" onclick="leaveCloudJob()">Stop Syncing</button><button type="button" class="btn" onclick="document.getElementById('syncDlg').close()">Close</button></div><p id="syncMsg" class="lead"></p></form></dialog><div id="mobileBuildShell" class="mobile-build-shell"><div class="mobile-build-head"><div><span>BUILD</span><b class="mobile-build-title">Programme</b><small class="mobile-build-sub">What’s happening on site</small></div></div><div class="mobile-build-nav"><button data-build-page="bookings" onclick="mobileBuildGo('bookings')"><i>▦</i><span>Programme</span></button><button data-build-page="signin" onclick="mobileBuildGo('signin')"><i>✓</i><span>Sign-In</span></button><button data-build-page="issues" onclick="mobileBuildGo('issues')"><i>!</i><span>Issues</span></button><button data-build-page="materials" onclick="mobileBuildGo('materials')"><i>□</i><span>Materials</span></button><button data-build-page="daily" onclick="mobileBuildGo('daily')"><i>≡</i><span>Diary</span></button><button data-build-page="jobs" onclick="mobileBuildGo('jobs')"><i>⋯</i><span>Job</span></button></div></div><main>
+<dialog id="syncDlg"><form method="dialog" onsubmit="return false"><div class="sync-header"><h2>Share &amp; Sync Job</h2><button type="button" class="btn" onclick="document.getElementById('syncDlg').close()">Close</button></div><p class="lead">Share a job link or use the same job code on another phone or computer. A plain website link does not connect someone to your job.</p><div id="syncCurrent"></div><p id="syncStatus" role="status" aria-live="polite"></p><small id="syncLastChecked"></small><div class="formgrid"><label class="full">Job Code<input id="joinCode" maxlength="12" placeholder="e.g. MGT-A7K4P9" style="text-transform:uppercase" autocapitalize="characters" spellcheck="false"></label><label class="full">Shared Job Link<input id="sharedJobLink" readonly placeholder="Create or join a shared job first"></label></div><p class="sync-help">Both devices must show the same connected code. Saved updates normally appear within a few seconds while the app is open.</p><p class="sync-help">Anyone with this job link/code can view and edit this job. Share it with your team.</p><div class="toolbar" style="margin-top:16px"><button type="button" class="primary green" data-sync-action onclick="createCloudJob()">Create Code From This Device</button><button type="button" class="primary" data-sync-action onclick="joinCloudJob()">Join With Code</button><button type="button" class="btn" data-connected-action onclick="copySharedJobLink()">Copy Job Link</button><button type="button" class="btn" data-connected-action onclick="syncNow()">Sync Now</button><button type="button" class="btn red" data-connected-action onclick="leaveCloudJob()">Stop Syncing</button></div><div id="syncConflict" class="sync-conflict" hidden><b>Shared update needs review</b><p>This device has a different saved version. Automatic upload is paused so your local edits are kept. Choose which version to use. The other version is kept as a separate local backup job.</p><button type="button" class="btn" data-connected-action onclick="resolveCloudConflict('remote')">Use Shared Version — Keep Local Backup</button><button type="button" class="btn" data-connected-action onclick="resolveCloudConflict('local')">Publish This Device’s Version</button></div><p id="syncMsg" class="lead" role="status" aria-live="polite"></p></form></dialog><div id="mobileBuildShell" class="mobile-build-shell"><div class="mobile-build-head"><div><span>BUILD</span><b class="mobile-build-title">Programme</b><small class="mobile-build-sub">What’s happening on site</small></div></div><div class="mobile-build-nav"><button data-build-page="bookings" onclick="mobileBuildGo('bookings')"><i>▦</i><span>Programme</span></button><button data-build-page="signin" onclick="mobileBuildGo('signin')"><i>✓</i><span>Sign-In</span></button><button data-build-page="issues" onclick="mobileBuildGo('issues')"><i>!</i><span>Issues</span></button><button data-build-page="materials" onclick="mobileBuildGo('materials')"><i>□</i><span>Materials</span></button><button data-build-page="daily" onclick="mobileBuildGo('daily')"><i>≡</i><span>Diary</span></button><button data-build-page="jobs" onclick="mobileBuildGo('jobs')"><i>⋯</i><span>Job</span></button></div></div><main>
 <section id="dashboard" class="page"><h1>Job Dashboard</h1><p class="lead">Live commercial and site overview.</p><div class="grid" id="kpis"></div>
 <div class="two"><div class="section management"><h3>Management Actions</h3><div id="managementActions"></div></div><div class="section maker"><h3>Site Supervisor — Site Priorities</h3><div id="makerPriorities"></div></div></div></section>
 <section id="overview" class="page"><h1>Build Overview</h1><p class="lead">Your live site command centre. Everything here is pulled automatically from Programme, Site, Materials and Issues.</p><div class="grid" id="overviewSummary"></div><div class="overview-two"><div class="section"><h2>Today on Site</h2><p class="lead">Trades, labour and plant scheduled today.</p><div id="overviewToday"></div></div><div class="section"><h2>Today's Deliveries</h2><p class="lead">Material orders due to arrive today.</p><div id="overviewDeliveries"></div></div></div><div class="overview-two"><div class="section"><h2>Coming Up</h2><p class="lead">What is scheduled in the next 7 days.</p><div id="overviewUpcoming"></div></div><div class="section"><h2>Recent Site Activity</h2><p class="lead">Latest site diary records and completed work.</p><div id="overviewActivity"></div></div></div><div class="section"><div class="toolbar" style="justify-content:space-between"><div><h2 style="margin:0 0 3px">Needs Attention</h2><p class="lead" style="margin:0">Programme delays, overdue deliveries and open site issues.</p></div><button class="primary green" onclick="openAttentionCentre()">Open Attention</button></div><div id="overviewAttention"></div></div><div class="section"><h2>Job Snapshot</h2><div id="overviewProgress"></div></div></section><section id="jobs" class="page"><h1>Job Setup</h1><p class="lead">Set the main project information once. The rest of Management uses it automatically.</p><div id="jobSetupContent"></div></section>
@@ -919,13 +923,9 @@ function syncLabourPlans(affected){
  }
 }
 function resetWorkspaceSession(){
- finishAttendanceSelectionDrag();
- clearTimeout(siteSnapshotSaveTimer);siteSnapshotSaveTimer=null;activeSiteSnapshotDate='';
- document.getElementById('siteSnapshotRows').replaceChildren();
- clearTimeout(cloudStartTimer);clearTimeout(cloudPushTimer);clearInterval(cloudTimer);
- cloudStartTimer=cloudPushTimer=cloudTimer=null;lastCloudJson='';siteSnapshotDirty=false;
- document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+ finishAttendanceSelectionDrag();clearTimeout(siteSnapshotSaveTimer);siteSnapshotSaveTimer=null;activeSiteSnapshotDate='';document.getElementById('siteSnapshotRows').replaceChildren();stopCloudSession();document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
 }
+
 let programmeSuppressClickUntil=0;
 function blankWorkspace(){return {jobs:[],costs:[],materials:[],trades:[],labour:[],bookings:[],issues:[],daily:[],hire:[],claims:[],tasks:[],estimates:[],stock:[],estimateGeneralMaterials:[],pricingExtras:[],programmeActivities:[],siteSnapshots:[]}}
 function safeStoredJson(key,fallback=null){try{let raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){console.warn('Ignoring invalid saved '+key,e);return fallback}}
@@ -969,65 +969,151 @@ function createWorkspace(){
 
 const SUPABASE_URL='https://tlskmedykrpdnjscbyxo.supabase.co';
 const SUPABASE_KEY='sb_publishable_O8Zj8F17bHON1N061PXHkw_Xyc48pFS';
-let sb=null;try{if(window.supabase&&typeof window.supabase.createClient==='function')sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){console.warn('Cloud sync unavailable',e)}
-let cloudCode=(workspaceStore.items[workspaceStore.active]&&workspaceStore.items[workspaceStore.active].cloudCode)||localStorage.getItem('managementCloudCode')||'';
+let sb=null;try{if(window.supabase&&typeof window.supabase.createClient==='function')sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(error){console.warn('Using direct cloud connection',error)}
+let cloudCode=workspaceStore.items[workspaceStore.active]?.cloudCode||'';
 let siteSnapshotDirty=false;
 let cloudBusy=false,cloudTimer=null,lastCloudJson='';
 let cloudStartTimer=null,cloudPushTimer=null,appReady=false;
-function scheduleCloudStart(){if(!appReady||!cloudCode||!sb)return;if(cloudStartTimer)clearTimeout(cloudStartTimer);cloudStartTimer=setTimeout(()=>{try{startCloud()}catch(e){console.warn('Cloud start skipped',e)}},1200)}
-function scheduleCloudPush(){if(!appReady||!cloudCode||!sb)return;if(cloudPushTimer)clearTimeout(cloudPushTimer);cloudPushTimer=setTimeout(()=>{try{pushCloud()}catch(e){console.warn('Cloud save skipped',e)}},800)}
-
-function normalCode(v){return (v||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim()}
-function newJobCode(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='MGT-';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s}
-function setCloudState(msg){let e=document.getElementById('cloudState');if(e)e.textContent=msg}
-function openSync(){let dlg=document.getElementById('syncDlg'),input=document.getElementById('joinCode'),current=document.getElementById('syncCurrent'),msg=document.getElementById('syncMsg');if(!dlg||!input||!current||!msg)return;input.value=cloudCode;current.innerHTML=cloudCode?'<p><b>Connected code:</b> <span style="font-size:20px">'+cloudCode+'</span></p>':'<p>This device is not connected to a shared job yet.</p>';msg.textContent='';try{if(typeof dlg.showModal==='function'){if(!dlg.open)showDialog(dlg)}else{dlg.setAttribute('open','');dlg.style.display='block'}}catch(e){dlg.setAttribute('open','');dlg.style.display='block'}}
+let cloudSession=0,cloudConflict=null,cloudLastChecked=0,cloudLastPoll=0,cloudRetryAt=0,cloudFailures=0;
+function cloudClient(){
+ if(sb)return sb;
+ return {rpc:async(name,args)=>{
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
+   try{const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify(args),signal:controller.signal});const text=await response.text(),value=text?JSON.parse(text):null;return response.ok?{data:value,error:null}:{data:null,error:{message:value?.message||'Cloud request failed'}}}
+   finally{clearTimeout(timeout)}
+ }};
+}
+async function cloudRpc(client,name,args,timeoutMs=10000){
+ const controller=new AbortController();let timer;
+ try{const task=client.rpc(name,args),request=typeof task?.abortSignal==='function'?task.abortSignal(controller.signal):task;const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(new Error('Cloud request timed out'))},timeoutMs)});return await Promise.race([request,timeout])}
+ finally{clearTimeout(timer)}
+}
+function canonicalCloudJson(value){
+ return JSON.stringify(value,(_,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.keys(item).sort().reduce((out,key)=>{out[key]=item[key];return out},Object.create(null)):item);
+}
+async function cloudFingerprint(value){
+ const text=canonicalCloudJson(value);
+ if(window.crypto?.subtle){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(bytes)].map(byte=>byte.toString(16).padStart(2,'0')).join('')}
+ let a=2166136261,b=5381;for(let i=0;i<text.length;i++){a=Math.imul(a^text.charCodeAt(i),16777619);b=Math.imul(b,33)^text.charCodeAt(i)}return text.length+':'+(a>>>0).toString(16)+':'+(b>>>0).toString(16);
+}
+function stopCloudSession(){
+ cloudSession++;cloudCode='';clearTimeout(cloudStartTimer);clearTimeout(cloudPushTimer);clearInterval(cloudTimer);cloudStartTimer=cloudPushTimer=cloudTimer=null;cloudBusy=false;cloudConflict=null;cloudLastChecked=cloudLastPoll=cloudRetryAt=cloudFailures=0;lastCloudJson='';siteSnapshotDirty=false;updateSyncControls();
+}
+function scheduleCloudStart(){if(!appReady||!cloudCode)return;clearTimeout(cloudStartTimer);cloudStartTimer=setTimeout(startCloud,300)}
+function scheduleCloudPush(){
+ if(!appReady||!cloudCode)return;clearTimeout(cloudPushTimer);
+ setCloudState(navigator.onLine===false?'— Offline · changes saved on this device':'— Upload pending · '+cloudCode,'pending');
+ cloudPushTimer=setTimeout(()=>{cloudPushTimer=null;pushCloud()},800);
+}
+function normalCode(value){return (value||'').toUpperCase().replace(/[^A-Z0-9-]/g,'').trim()}
+function newJobCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(8);crypto.getRandomValues(bytes);return 'MGT-'+[...bytes].map(byte=>chars[byte%chars.length]).join('')}
+function setCloudState(message,state=''){
+ const element=document.getElementById('cloudState');if(element){element.textContent=message;element.dataset.state=state}
+ const detail=document.getElementById('syncStatus');if(detail)detail.textContent=message.replace(/^—\s*/,'');
+ const checked=document.getElementById('syncLastChecked');if(checked)checked.textContent=cloudLastChecked?'Last successful check: '+new Date(cloudLastChecked).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'No successful cloud check in this session yet.';
+ updateSyncControls();
+}
+function updateSyncControls(){
+ document.querySelectorAll('[data-sync-action]').forEach(button=>button.disabled=cloudBusy);
+ document.querySelectorAll('[data-connected-action]').forEach(button=>button.disabled=!cloudCode||cloudBusy);
+ const conflict=document.getElementById('syncConflict');if(conflict)conflict.hidden=!cloudConflict;
+ const link=document.getElementById('sharedJobLink');if(link)link.value=sharedJobUrl();
+}
+function sharedJobUrl(){
+ if(!cloudCode||!/^https?:$/.test(location.protocol))return '';
+ const url=new URL(location.href);url.hash='job='+encodeURIComponent(cloudCode);return url.href;
+}
+async function copySharedJobLink(){
+ const input=document.getElementById('sharedJobLink');input.value=sharedJobUrl();
+ if(!input.value){document.getElementById('syncMsg').textContent='Open the published website to copy a shareable link. You can still share the job code.';return}
+ try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(input.value);document.getElementById('syncMsg').textContent='Job link copied. The other person opens it and chooses Join With Code.';notify('Job link copied')}
+ catch(error){input.focus();input.select();document.getElementById('syncMsg').textContent='Select and copy the job link above.'}
+}
+function openSync(){
+ const dialog=document.getElementById('syncDlg');document.getElementById('joinCode').value=cloudCode;
+ document.getElementById('syncCurrent').innerHTML=cloudCode?'<p><b>Connected code:</b> '+snapshotEsc(cloudCode)+'</p>':'<p>This job is saved on this device only. Create a code to share it, or join an existing shared job.</p>';
+ document.getElementById('syncMsg').textContent='';updateSyncControls();showDialog(dialog);
+ const detail=document.getElementById('syncStatus');detail.textContent=document.getElementById('cloudState').textContent.replace(/^—\s*/,'');
+}
+function offerSharedJobLink(){
+ const params=new URLSearchParams(location.hash.slice(1)),value=params.get('job');if(!value)return;
+ const code=normalCode(value);if(!/^[A-Z0-9-]{1,12}$/.test(code))return;
+ if(code!==cloudCode){openSync();document.getElementById('joinCode').value=code;document.getElementById('syncMsg').textContent='Shared job link ready. Choose Join With Code to open it; your current job will be kept.'}
+ params.delete('job');try{history.replaceState(null,'',location.pathname+location.search+(params.toString()?'#'+params.toString():''))}catch(error){/* A file preview may not allow history updates. */}
+}
+function validSharedWorkspace(data){return !!data&&typeof data==='object'&&!Array.isArray(data)&&Object.keys(blankWorkspace()).every(key=>data[key]==null||Array.isArray(data[key]))}
+function cloudContextValid(session,code,workspace){return session===cloudSession&&code===cloudCode&&workspace===workspaceStore.active}
+function cloudEditorOpen(){return !!attendanceSelectionDrag||!!document.querySelector('dialog[open]:not(#syncDlg)')||!!document.activeElement?.closest('.page.active input,.page.active textarea,.page.active select')}
+function rememberCloudBaseline(data,fingerprint){
+ lastCloudJson=JSON.stringify(data);const workspace=workspaceStore.items[workspaceStore.active],changed=workspace.cloudFingerprint!==fingerprint||siteSnapshotDirty;workspace.cloudFingerprint=fingerprint;workspace.lastSyncedAt=Date.now();cloudLastChecked=Date.now();siteSnapshotDirty=false;cloudConflict=null;cloudFailures=cloudRetryAt=0;if(changed)saveWorkspaceStore();
+}
+function applyIncomingSharedData(data,fingerprint){
+ db=normalizeWorkspace(data);rememberCloudBaseline(db,fingerprint);saveWorkspaceStore();renderWorkspaceSwitcher();finishAttendanceSelectionDrag();document.getElementById('siteSnapshotRows').replaceChildren();activeSiteSnapshotDate='';render();
+ if(document.getElementById('programmeDayDlg').open&&activeProgrammeDay)openProgrammeDay(activeProgrammeDay);
+}
+function reportCloudFailure(message='Connection unavailable'){
+ cloudFailures++;cloudRetryAt=Date.now()+Math.min(15000,2000*2**Math.min(cloudFailures-1,3));setCloudState('— '+message+' · local changes kept; retrying','error');
+}
 async function createCloudJob(){
- let msg=document.getElementById('syncMsg');if(!sb){msg.textContent='Cloud sync could not load in this browser. The rest of the app will still work.';return}let code=newJobCode();msg.textContent='Creating shared job…';
- let {error}=await sb.rpc('create_management_job',{p_code:code,p_data:db});
- if(error){msg.textContent='Could not create it yet: '+error.message;return}
- cloudCode=code;localStorage.setItem('managementCloudCode',code);lastCloudJson=JSON.stringify(db);startCloud();openSync();msg.textContent='Created. Enter this code on your other device: '+code;
+ if(cloudBusy)return;if(cloudCode){openSync();document.getElementById('syncMsg').textContent='This job is already shared. Copy its job link to invite another person.';return}
+ flushSiteSnapshotSave();const session=cloudSession,workspace=workspaceStore.active,code=newJobCode(),sent=JSON.parse(JSON.stringify(db));cloudBusy=true;updateSyncControls();document.getElementById('syncMsg').textContent='Creating shared job…';
+ try{const {data:created,error}=await cloudRpc(cloudClient(),'create_management_job',{p_code:code,p_data:sent});if(session!==cloudSession||workspace!==workspaceStore.active)return;if(error||created===false)throw new Error(error?.message||'Shared job was not created');
+   const fingerprint=await cloudFingerprint(sent);if(session!==cloudSession||workspace!==workspaceStore.active)return;cloudCode=code;localStorage.setItem('managementCloudCode',code);rememberCloudBaseline(sent,fingerprint);siteSnapshotDirty=JSON.stringify(db)!==JSON.stringify(sent)||!!siteSnapshotSaveTimer;saveWorkspaceStore();openSync();document.getElementById('syncMsg').textContent='Shared job created. Copy the job link or send its code to your team.';
+ }catch(error){if(session===cloudSession){document.getElementById('syncMsg').textContent='Could not connect to create the shared job. Your local job is kept. Try again.';reportCloudFailure()}console.warn('Create shared job failed',error)}finally{if(session===cloudSession){cloudBusy=false;updateSyncControls()}}
+ if(cloudContextValid(session,code,workspace))startCloud();
 }
 async function joinCloudJob(){
- let code=normalCode(document.getElementById('joinCode').value),msg=document.getElementById('syncMsg');if(!sb){msg.textContent='Cloud sync could not load in this browser. The rest of the app will still work.';return}if(!code){msg.textContent='Enter a job code first.';return}
- msg.textContent='Connecting…';let {data,error}=await sb.rpc('load_management_job',{p_code:code});
- if(error||!data){msg.textContent='Code not found or could not connect.';return}
- if(!confirm('Load the shared job onto this device? This will replace the current local data on this device.'))return;
- db=normalizeWorkspace(data);cloudCode=code;localStorage.setItem('managementCloudCode',code);localStorage.setItem('mmdb',JSON.stringify(db));lastCloudJson=JSON.stringify(db);render();startCloud();openSync();msg.textContent='Connected. This device will now stay synced.';
+ if(cloudBusy)return;const code=normalCode(document.getElementById('joinCode').value),message=document.getElementById('syncMsg');if(!/^[A-Z0-9-]{1,12}$/.test(code)){message.textContent='Enter a valid job code first.';return}
+ const existing=Object.entries(workspaceStore.items).find(([,workspace])=>workspace.cloudCode===code);
+ if(existing){if(existing[0]!==workspaceStore.active)switchWorkspace(existing[0]);startCloud();openSync();document.getElementById('syncMsg').textContent='Opened the existing shared job. Checking for updates…';return}
+ flushSiteSnapshotSave();if(!saveWorkspaceStore())return;const session=cloudSession,workspace=workspaceStore.active;cloudBusy=true;updateSyncControls();message.textContent='Connecting…';
+ try{const {data,error}=await cloudRpc(cloudClient(),'load_management_job',{p_code:code});if(session!==cloudSession||workspace!==workspaceStore.active)return;if(error||!validSharedWorkspace(data))throw new Error(error?.message||'Job code not found');
+   const incoming=normalizeWorkspace(data),fingerprint=await cloudFingerprint(incoming);if(session!==cloudSession||workspace!==workspaceStore.active)return;
+   resetWorkspaceSession();const id='shared-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);workspaceStore.items[id]={name:incoming.jobs[0]?.name||'Shared job',data:incoming,cloudCode:code,cloudFingerprint:fingerprint};workspaceStore.active=id;db=incoming;cloudCode=code;localStorage.setItem('managementCloudCode',code);rememberCloudBaseline(db,fingerprint);saveWorkspaceStore();renderWorkspaceSwitcher();render();startCloud();openSync();document.getElementById('syncMsg').textContent='Connected. Updates sync automatically. Your previous job is still in the job selector.';
+ }catch(error){if(session===cloudSession){message.textContent='Could not connect. Check the job code and connection, then try again. Your current job is kept.';reportCloudFailure()}console.warn('Join shared job failed',error)}finally{if(session===cloudSession){cloudBusy=false;updateSyncControls()}}
 }
-function leaveCloudJob(){cloudCode='';localStorage.removeItem('managementCloudCode');if(cloudTimer)clearInterval(cloudTimer);cloudTimer=null;setCloudState('— This device only');document.getElementById('syncDlg').close()}
-async function pushCloud(){
- if(!sb||!cloudCode||cloudBusy)return;
- const data=JSON.stringify(db);if(data===lastCloudJson){siteSnapshotDirty=false;return}
- const code=cloudCode,workspace=workspaceStore.active;cloudBusy=true;
+function leaveCloudJob(){flushSiteSnapshotSave();stopCloudSession();cloudCode='';localStorage.removeItem('managementCloudCode');delete workspaceStore.items[workspaceStore.active].cloudFingerprint;saveWorkspaceStore();setCloudState('— This device only');document.getElementById('syncDlg').close()}
+async function syncSharedJob(){
+ if(!cloudCode||!appReady||cloudBusy)return;
+ if(navigator.onLine===false){setCloudState('— Offline · changes saved on this device','pending');return}
+ if(siteSnapshotSaveTimer)flushSiteSnapshotSave();const session=cloudSession,code=cloudCode,workspace=workspaceStore.active,client=cloudClient();cloudBusy=true;updateSyncControls();
  try{
-   const {error}=await sb.rpc('save_management_job',{p_code:code,p_data:JSON.parse(data)});
-   if(code!==cloudCode||workspace!==workspaceStore.active)return;
-   if(error){setCloudState('— Sync error');return}
-   lastCloudJson=data;siteSnapshotDirty=JSON.stringify(db)!==data;setCloudState('— Synced '+code);
-   if(siteSnapshotDirty)scheduleCloudPush();
- }catch(error){if(code===cloudCode&&workspace===workspaceStore.active)setCloudState('— Sync unavailable');console.warn('Cloud save failed',error)}finally{cloudBusy=false}
-}
-async function pullCloud(){
- if(!sb||!cloudCode||cloudBusy||!appReady)return;
- if(siteSnapshotSaveTimer)flushSiteSnapshotSave();
- if(!lastCloudJson)lastCloudJson=JSON.stringify(db);
- if(siteSnapshotDirty||JSON.stringify(db)!==lastCloudJson){scheduleCloudPush();return}
- const code=cloudCode,workspace=workspaceStore.active,baseline=lastCloudJson;cloudBusy=true;
- try{
-   const {data,error}=await sb.rpc('load_management_job',{p_code:code});
-   if(code!==cloudCode||workspace!==workspaceStore.active)return;
-   if(error||!data){setCloudState('— Sync error');return}
-   // A local edit made during the request must win over a stale incoming response.
-   if(siteSnapshotSaveTimer||siteSnapshotDirty||JSON.stringify(db)!==baseline){scheduleCloudPush();return}
-   if(JSON.stringify(data)!==baseline){
-     db=normalizeWorkspace(data);lastCloudJson=JSON.stringify(db);saveWorkspaceStore();
-     document.getElementById('siteSnapshotRows').replaceChildren();activeSiteSnapshotDate='';render();
-     if(document.getElementById('programmeDayDlg').open&&activeProgrammeDay)openProgrammeDay(activeProgrammeDay);
+   const {data,error}=await cloudRpc(client,'load_management_job',{p_code:code});if(!cloudContextValid(session,code,workspace))return;if(error||!validSharedWorkspace(data))throw new Error(error?.message||'Shared job unavailable');
+   if(siteSnapshotSaveTimer)flushSiteSnapshotSave();const remote=normalizeWorkspace(data),localVersion=JSON.stringify(db),remoteHash=await cloudFingerprint(remote),baseHash=lastCloudJson?await cloudFingerprint(JSON.parse(lastCloudJson)):workspaceStore.items[workspace].cloudFingerprint||'',localHash=await cloudFingerprint(JSON.parse(localVersion));
+   if(!cloudContextValid(session,code,workspace))return;if(siteSnapshotSaveTimer||JSON.stringify(db)!==localVersion){scheduleCloudPush();return}cloudLastChecked=Date.now();cloudFailures=cloudRetryAt=0;
+   if(localHash===remoteHash){rememberCloudBaseline(db,localHash);setCloudState('— Synced · '+code,'synced');return}
+   if(baseHash&&localHash===baseHash){
+     if(cloudEditorOpen()){setCloudState('— Update available · finish editing to refresh','pending');return}
+     applyIncomingSharedData(remote,remoteHash);setCloudState('— Synced · '+code,'synced');return;
    }
-   setCloudState('— Synced '+code);
- }catch(error){console.warn('Cloud pull failed',error);if(code===cloudCode&&workspace===workspaceStore.active)setCloudState('— Sync unavailable')}finally{cloudBusy=false}
+   if(!baseHash||remoteHash!==baseHash){cloudConflict={code,workspace,remoteHash};setCloudState('— Updates need review · local edits kept','conflict');return}
+   // Read the current remote version before writing; never replace a known intervening edit silently.
+   const sent=JSON.parse(localVersion),sentHash=localHash;setCloudState('— Uploading changes · '+code,'pending');const response=await cloudRpc(client,'save_management_job',{p_code:code,p_data:sent});if(!cloudContextValid(session,code,workspace))return;if(response.error||response.data===false)throw new Error(response.error?.message||'Shared job was not saved');
+   rememberCloudBaseline(sent,sentHash);siteSnapshotDirty=JSON.stringify(db)!==JSON.stringify(sent)||!!siteSnapshotSaveTimer;saveWorkspaceStore();if(siteSnapshotDirty){scheduleCloudPush()}else{setCloudState('— Synced · '+code,'synced')}
+ }catch(error){if(cloudContextValid(session,code,workspace))reportCloudFailure();console.warn('Shared job sync failed',error)}finally{if(session===cloudSession){cloudBusy=false;updateSyncControls()}}
 }
-function startCloud(){saveWorkspaceStore();if(cloudTimer)clearInterval(cloudTimer);if(!cloudCode){setCloudState('— This device only');return}if(!sb){setCloudState('— Sync unavailable');return}setCloudState('— Syncing '+cloudCode);pullCloud();cloudTimer=setInterval(pullCloud,5000)}
+async function pushCloud(){return syncSharedJob()}
+async function pullCloud(){return syncSharedJob()}
+function startCloud(){
+ clearInterval(cloudTimer);cloudTimer=null;if(!cloudCode){setCloudState('— This device only');return}saveWorkspaceStore();setCloudState('— Connecting · '+cloudCode,'pending');pullCloud();
+ cloudTimer=setInterval(()=>{const now=Date.now();if(now<cloudRetryAt||(document.hidden&&now-cloudLastPoll<15000))return;cloudLastPoll=now;pullCloud()},2000);
+}
+async function syncNow(){if(!cloudCode)return;cloudRetryAt=0;clearTimeout(cloudPushTimer);cloudPushTimer=null;return syncSharedJob()}
+function wakeCloudSync(){if(appReady&&cloudCode){cloudRetryAt=0;syncNow()}}
+function backupSharedVersion(data,label){
+ const id='backup-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);workspaceStore.items[id]={name:label+' — '+(data.jobs?.[0]?.name||'Job'),data:JSON.parse(JSON.stringify(data)),cloudCode:''};if(saveWorkspaceStore())return true;delete workspaceStore.items[id];return false;
+}
+async function resolveCloudConflict(choice){
+ if(!cloudConflict||cloudBusy)return;if(cloudEditorOpen()){document.getElementById('syncMsg').textContent='Finish or close the open editor before choosing a shared version.';return}if(!confirm(choice==='remote'?'Use the shared version? Your current data will be kept as a separate local backup job.':'Publish this device’s version to the shared job? This replaces the current shared data. A local backup of the shared version will be kept.'))return;
+ flushSiteSnapshotSave();const session=cloudSession,code=cloudCode,workspace=workspaceStore.active;cloudBusy=true;updateSyncControls();
+ try{const {data,error}=await cloudRpc(cloudClient(),'load_management_job',{p_code:code});if(!cloudContextValid(session,code,workspace))return;if(error||!validSharedWorkspace(data))throw new Error(error?.message||'Shared job unavailable');const remote=normalizeWorkspace(data),hash=await cloudFingerprint(remote);if(!cloudContextValid(session,code,workspace))return;
+   if(siteSnapshotSaveTimer)flushSiteSnapshotSave();
+   if(!backupSharedVersion(choice==='remote'?db:remote,choice==='remote'?'Local changes backup':'Shared version backup'))return;
+   if(choice==='remote'){applyIncomingSharedData(remote,hash);setCloudState('— Synced · '+code,'synced');document.getElementById('syncMsg').textContent='Shared version loaded. Your previous local data is in the job selector as a backup.'}
+   else{lastCloudJson=JSON.stringify(remote);workspaceStore.items[workspace].cloudFingerprint=hash;cloudConflict=null;saveWorkspaceStore();scheduleCloudPush();document.getElementById('syncMsg').textContent='Your version is queued for upload. The previous shared version is kept as a local backup.'}
+ }catch(error){if(cloudContextValid(session,code,workspace))reportCloudFailure();console.warn('Shared job review failed',error)}finally{if(session===cloudSession){cloudBusy=false;updateSyncControls()}}
+}
+
 
 
 const hireCategories=['Truck / Tipper','Crane','Concrete Pump','Excavator','Bobcat / Skid Steer','EWP / Scissor Lift','Forklift / Telehandler','Loader','Roller / Compactor','Generator','Site Shed','Portable Toilet','Skip Bin / Waste','Temporary Fencing','Traffic Control Equipment','Tools / Small Plant','Other'];
@@ -2094,6 +2180,7 @@ function editRow(t,i){if(t==='bookings')editBooking(i);else openForm(t,i)}
 function removeRow(t,i){if(confirm('Delete this record?')){let row=db[t][i],keys=new Set();if(row?.autoKey)keys.add(row.autoKey);if(t==='labour'&&row){labourEntries(row).forEach(x=>x.autoKey&&keys.add(x.autoKey));labourBookings(row).forEach(x=>x.autoKey&&keys.add(x.autoKey))}if(t==='trades'&&row)tradeBookings(row).forEach(x=>{if(x.autoKey)keys.add(x.autoKey);if(x.parentAutoKey)keys.add(x.parentAutoKey)});if(t==='hire'&&row)hireBookings(row).forEach(x=>{if(x.autoKey)keys.add(x.autoKey);if(x.parentAutoKey)keys.add(x.parentAutoKey)});if(t==='materials'&&row?.autoKey)keys.add(row.autoKey);if(t!=='bookings'&&keys.size)db.bookings=db.bookings.filter(b=>!keys.has(b.autoKey)&&!keys.has(b.parentAutoKey));db[t].splice(i,1);if(t==='bookings')syncLabourPlans([row]);persist('Deleted')}}
 
 document.addEventListener('close',event=>{const feedback=document.getElementById('appFeedback');if(feedback.parentElement===event.target)document.body.appendChild(feedback)},true);
+window.addEventListener('hashchange',offerSharedJobLink);window.addEventListener('online',wakeCloudSync);window.addEventListener('focus',wakeCloudSync);window.addEventListener('offline',()=>{if(cloudCode)setCloudState('— Offline · changes saved on this device','pending')});document.addEventListener('visibilitychange',()=>{if(!document.hidden)wakeCloudSync()});document.addEventListener('close',()=>{if(appReady&&cloudCode&&!cloudEditorOpen())wakeCloudSync()},true);
 document.addEventListener('pointerdown',beginAttendanceSelectionDrag);document.addEventListener('click',suppressAttendanceSelectionClick,true);
 updateViewport();window.addEventListener('resize',updateViewport);window.visualViewport?.addEventListener('resize',updateViewport);
 // Safari-safe early shell startup. This runs before optional UI listeners so one later
@@ -2110,5 +2197,5 @@ document.getElementById('role').addEventListener('change',e=>{
 });
 repairIntegrity();
 try{render()}catch(e){console.error('Page render startup failed',e);try{renderMyDay()}catch(_){}}
-appReady=true;setCloudState(cloudCode?'— Shared '+cloudCode:'— This device only');
+appReady=true;setCloudState(cloudCode?'— Connecting · '+cloudCode:'— This device only');if(cloudCode)startCloud();offerSharedJobLink();
 </script></body></html>
