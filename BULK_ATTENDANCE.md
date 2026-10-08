@@ -15,7 +15,7 @@ On desktop, press and hold the mouse on a selection checkbox (or its selection c
 
 ## Safeguards
 
-There is one neutral-styled hours action beside Hours: **Apply Nh to N selected**. The separate whole-day apply button has been removed. With no selection, Apply is disabled; it never falls back to changing everyone. Selection buttons only select people and do not record attendance or hours.
+There is one green hours action beside Hours: **Apply Nh to N selected**. The separate whole-day apply button has been removed. With no selection, Apply is disabled; it never falls back to changing everyone. Selection buttons only select people and do not record attendance or hours.
 
 **Keep existing attendance & hours** is checked by default. Bulk actions skip rows already marked present/absent or containing positive actual hours. The feedback states how many existing records were kept. To deliberately replace them, uncheck that protection; a confirmation identifies the affected date, existing-record count and sample names/hours. Cancelling leaves the records and remembered standard hours unchanged.
 
@@ -37,6 +37,6 @@ Automated tests cover a 40-worker crew plus scheduled trade and plant, bulk fill
 
 The regression suite includes real mouse range selection/deselection, backward and filtered selection, release outside the table, native clicks/keyboard input, phone touch handling, edge scrolling and cancellation when changing dates, alongside the existing attendance and integration checks.
 
-All 49 regression tests pass, including desktop and phone checks that the single neutral primary hours button updates only the selected person/group, without a separate whole-day apply button, plus name-selector checks for alphabetical names, selecting and applying hours to only the chosen worker, returning to all names, search interaction and resetting on a new date. The complete regression suite also retains Programme dragging/date clicks, booking/Remove Future/Delete, labour/trade/hire scheduling, costs, diary, issues, tasks, materials, estimating, workspace isolation and mocked cloud recovery checks. Run `npm test --prefix tests`.
+All 49 regression tests pass, including desktop and phone checks that the single green primary hours button updates only the selected person/group, without a separate whole-day apply button, plus name-selector checks for alphabetical names, selecting and applying hours to only the chosen worker, returning to all names, search interaction and resetting on a new date. The complete regression suite also retains Programme dragging/date clicks, booking/Remove Future/Delete, labour/trade/hire scheduling, costs, diary, issues, tasks, materials, estimating, workspace isolation and mocked cloud recovery checks. Run `npm test --prefix tests`.
 
 Screenshots were inspected using a 40-worker fixture. Layout measurements found no page-width overflow at 360/390/430/1440px. Chromium phone emulation is used; physical-device keyboards and production multi-device synchronization were not tested. No production data is written by the tests, and these repository changes have not been deployed.
