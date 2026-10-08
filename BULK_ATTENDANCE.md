@@ -1,52 +1,20 @@
-# Bulk Site Sign-In
+# Daily Site Sign-In
 
-## Daily workflow
+1. Open the required date and review expected people.
+2. Press **Mark All On Site**, confirm the date/count, and mark any exceptions absent/off site. You can also mark people on site individually.
+3. Enter standard hours and press the green **Apply Nh to N on site** button.
+4. Edit individual hours for early finishes/overtime and press **Save Day**.
 
-1. Open the required Site Sign-In date and review the expected Labour/Trades count.
-2. Choose **Select Expected** (or **Select All** for every entry), enter the normal daily hours, then press **Apply Nh to N selected**.
-3. Adjust exceptions by searching for a name or scrolling the compact attendance list. Actual hours, attendance, work area, activity and other existing details remain editable.
-4. Press **Save Day**. Feedback shows present people, explicitly absent people and total actual hours.
+There are no selection buttons, selection checkboxes, crew selectors or name dropdown. **Find a person / trade** only filters names, roles and crews; it never changes who receives hours. Bulk hours always use everyone marked on site for the chosen day, including hidden search results and manually added people. Expected-only, off-site and absent people receive no hours from this action. With no one on site, Apply is disabled. Individual attendance, hours and secondary details remain editable.
 
-Use **Select a worker** to choose an alphabetical name from the selected day. Choosing a name shows only that person and selects them for the hours action, replacing the previous bulk selection. **All names** restores the full list without changing recorded attendance. Typing in the search field clears the name filter; opening another date resets it. Unexpected people can still be added through **Add Person / Trade**.
+**Keep entered hours & absent records** is checked by default. Positive actual hours remain protected, while on-site people with zero hours can receive their daily hours. The help text shows how many existing records are kept. Unchecking protection warns before replacing entered hours. Applying zero hours marks the affected on-site people absent. Other dates and planned hours remain unchanged.
 
-The bar has two steps: **Choose people**, then **Set their hours**. **Deselect** clears only selection and leaves attendance and hours unchanged. Crew/trade selection applies immediately; no extra Select Group click is needed. Attendance-only actions are grouped at the top of the bar, before selection and hours.
+**Mark All On Site** affects everyone listed for that day, including manual people and hidden rows. It warns before replacing absent statuses and leaves hours unchanged. **Clear On-Site Marks** removes all on-site marks but keeps actual hours and absent statuses; it confirms when hours have already been entered. Neither action changes another date.
 
-Alternatively, use **Select All**, individual selection checkboxes, or **Select a crew / trade**, then the main **Apply Nh to N selected** button. Group names come from that day's roles and crews; repeated names are deduplicated. Selecting a group replaces the current selection. Select All includes every entry for the date, including entries hidden by attendance search. The displayed selected count includes those hidden entries.
+Compact green **+ Person / Trade** and **+ Manual** buttons sit beside search on desktop and directly below it on phones. Manual entries support inclusive start/end dates and optional Programme scheduling. Expected future days start with no attendance and zero actual hours; planned crew quantities do not create fictitious attendees.
 
-On desktop, press and hold the mouse on a selection checkbox (or its selection cell), then drag up or down across rows. Starting on an unchecked worker selects the range; starting on a checked worker deselects it. Selected rows are highlighted, hidden search results are skipped, and dragging near the screen edge scrolls through a long crew list. Moving back towards the starting row shrinks the range while preserving the previous selection outside it. Release the mouse to finish. This only changes selection; **Apply** still controls attendance/hours. Phone touch scrolling and ordinary checkbox taps keep their existing behaviour.
+Attendance uses the existing dated snapshots and whole-day autosave/Save Day path. Updates continue to feed diary attendance, hours summaries, labour costs and shared-job persistence. Existing manual timesheets keep their prior precedence. Standard daily hours are remembered per job and never automatically applied on another date.
 
-## Safeguards
+Desktop attendance uses a fixed-width table with proportional columns so all fields fit available page width. Phones retain compact stacked cards, expandable details and the fixed Save Day button.
 
-There is one green hours action beside Hours: **Apply Nh to N selected**. The separate whole-day apply button has been removed. With no selection, Apply is disabled; it never falls back to changing everyone. Select buttons only select people and do not record attendance or hours. Clear On-Site Marks also removes the day’s on-site marks while keeping entered hours and absent statuses.
-
-**Keep entered hours & absent records** is checked by default. Bulk actions skip absent rows and rows containing positive actual hours. People marked present with zero hours can receive their daily hours without disabling protection. The feedback states how many existing records were kept. To deliberately replace them, uncheck that protection; a confirmation identifies the affected date, existing-record count and sample names/hours. Cancelling leaves the records and remembered standard hours unchanged.
-
-**Select Expected** selects only Labour/Trades expected from Programme/resource bookings for the selected date. Hire/plant, unscheduled directory people and manually added unexpected people are excluded. They can still be selected explicitly for the selected-hours action. Each existing attendance row represents its existing worker/trade entry; this does not invent individual workers within a subcontractor company.
-
-Bulk changes set actual hours and attendance together: positive hours mark present; zero marks absent. They do not change planned hours, Programme dates or another day's history. Marking an individual absent clears actual hours, with confirmation when positive hours are already recorded. Entering positive actual hours for an absent person changes that person back to present.
-
-The last successfully applied bulk hours are remembered in the job's workspace data, defaulting to eight hours for a new job. Opening another date does not apply them or mark scheduled people present. Selection is temporary UI state and is not saved into attendance history.
-
-## Persistence and integration
-
-Bulk edits use the existing dated Site Sign-In snapshot and whole-day save path. One Apply schedules one autosave for the entire snapshot, rather than one save per worker. Save Day explicitly saves the complete day; existing autosave remains as protection against losing adjustments. Existing diary attendance, hours breakdown, labour costs and related views refresh through the established attendance save path. Existing manually entered labour timesheets retain their prior precedence over snapshot-derived entries for the same date.
-
-Mobile rows keep name, selection, status, actual hours and arrival/absence actions visible. Secondary details expand on demand. Save Day remains above the bottom navigation while scrolling. Desktop retains its attendance table with separate selection and arrival checkboxes. Removal re-renders remaining rows so their selection/edit handlers keep the correct indexes.
-
-## Validation
-
-Automated tests cover a 40-worker crew plus scheduled trade and plant, bulk filling, individual early departure/absence/overtime exceptions, original-date history, snapshot-derived labour hours, persistence/reload, group selection, selection hidden by search, default protection, cancelled/confirmed overwrite, temporary selection exclusion from stored data, job-specific defaults, unrecorded future expectations, unexpected-person exclusion, correcting absence, and phone interactions at 360/390/430px.
-
-The regression suite includes real mouse range selection/deselection, backward and filtered selection, release outside the table, native clicks/keyboard input, phone touch handling, edge scrolling and cancellation when changing dates, alongside the existing attendance and integration checks.
-
-Regression tests cover desktop and phone checks that the single green primary hours button updates only the selected person/group, without a separate whole-day apply button, plus name-selector checks for alphabetical names, selecting and applying hours to only the chosen worker, returning to all names, search interaction and resetting on a new date. The complete regression suite also retains Programme dragging/date clicks, booking/Remove Future/Delete, labour/trade/hire scheduling, costs, diary, issues, tasks, materials, estimating, workspace isolation and mocked cloud recovery checks. Run `npm test --prefix tests`.
-
-Screenshots were inspected using a 40-worker fixture. Layout measurements found no page-width overflow at 360/390/430/1440px. Chromium phone emulation is used; physical-device keyboards and production multi-device synchronization were not tested. No production data is written by the tests, and these repository changes have not been deployed.
-
-Manual entries offer start and end dates (inclusive, including weekends) and an **Add to Programme as expected Labour** option. Both dates default to the selected site day. Programme bookings retain the manual person’s name, role and crew. Expected days start with zero actual hours and no attendance; record each day separately. Uncheck the Programme option for a one-off visitor. Existing historical attendance is retained.
-
-**Select All On Site** replaces the selection with everyone marked on site for the selected day, including manual people. It excludes expected-only, off-site and absent people, even when a name/search filter hides them. It changes selection only; use Apply to set hours. Existing-hours protection still applies.
-
-**Mark All On Site** confirms the count and date, then marks everyone listed that day present, including hidden rows and manual people. The warning identifies absent statuses that will be replaced. Hours and selections stay unchanged, and other dates are untouched. Existing-attendance protection continues to apply to the separate hours action.
-
-**Clear On-Site Marks** clears selections and all on-site marks for the selected day, including hidden/manual rows. If present people have entered hours, it asks for confirmation; those hours are retained, as are absent statuses. **Mark All On Site** includes manual and picker additions even when hidden by name/search filters.
+Regression checks cover large crews, exceptions, overwrite confirmation/cancellation, filtered/manual attendees, absent and expected-only exclusion, history, reload, job defaults, Programme integration and mocked sharing. Layout checks cover the desktop table at 800/1024/1440px and phone attendance at 360/390/430px. Run `npm test --prefix tests`. No production data is written by these tests.
