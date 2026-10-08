@@ -9,7 +9,7 @@
 
 Use **Select a worker** to choose an alphabetical name from the selected day. Choosing a name shows only that person and selects them for the hours action, replacing the previous bulk selection. **All names** restores the full list without changing recorded attendance. Typing in the search field clears the name filter; opening another date resets it. Unexpected people can still be added through **Add Person / Trade**.
 
-The bar has two steps: **Choose people**, then **Set their hours**. **Deselect** clears only selection and leaves attendance and hours unchanged. Crew/trade selection applies immediately; no extra Select Group click is needed. Attendance-only actions are grouped separately below the hours controls.
+The bar has two steps: **Choose people**, then **Set their hours**. **Deselect** clears only selection and leaves attendance and hours unchanged. Crew/trade selection applies immediately; no extra Select Group click is needed. Attendance-only actions are grouped at the top of the bar, before selection and hours.
 
 Alternatively, use **Select All**, individual selection checkboxes, or **Select a crew / trade**, then the main **Apply Nh to N selected** button. Group names come from that day's roles and crews; repeated names are deduplicated. Selecting a group replaces the current selection. Select All includes every entry for the date, including entries hidden by attendance search. The displayed selected count includes those hidden entries.
 
@@ -47,6 +47,6 @@ Manual entries offer start and end dates (inclusive, including weekends) and an 
 
 **Select All On Site** replaces the selection with everyone marked on site for the selected day, including manual people. It excludes expected-only, off-site and absent people, even when a name/search filter hides them. It changes selection only; use Apply to set hours. Existing-hours protection still applies.
 
-**Mark All Present** confirms the count and date, then marks everyone listed that day present, including hidden rows and manual people. The warning identifies absent statuses that will be replaced. Hours and selections stay unchanged, and other dates are untouched. Existing-attendance protection continues to apply to the separate hours action.
+**Mark All On Site** confirms the count and date, then marks everyone listed that day present, including hidden rows and manual people. The warning identifies absent statuses that will be replaced. Hours and selections stay unchanged, and other dates are untouched. Existing-attendance protection continues to apply to the separate hours action.
 
-**Clear On-Site Marks** clears selections and all on-site marks for the selected day, including hidden/manual rows. If present people have entered hours, it asks for confirmation; those hours are retained, as are absent statuses. **Mark All Present** includes manual and picker additions even when hidden by name/search filters.
+**Clear On-Site Marks** clears selections and all on-site marks for the selected day, including hidden/manual rows. If present people have entered hours, it asks for confirmation; those hours are retained, as are absent statuses. **Mark All On Site** includes manual and picker additions even when hidden by name/search filters.
