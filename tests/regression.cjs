@@ -411,3 +411,18 @@ test('phone sharing controls and conflict review fit the screen with Close reach
    await connectFixtureCloud(page,backend);backend.jobs.get('TEST').jobs[0].name='Shared change';await page.evaluate(()=>{db.jobs[0].name='Phone edit';saveWorkspaceStore()});await page.evaluate(()=>syncNow());await page.evaluate(()=>openSync());await page.locator('#syncConflict').scrollIntoViewIfNeeded();assert.ok(await page.locator('#syncDlg').evaluate(el=>el.scrollWidth<=el.clientWidth));const close=await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).boundingBox();assert.ok(close.y>=0&&close.y+close.height<=844);assert.equal(await page.locator('#syncConflict').isVisible(),true);await page.locator('#syncDlg').getByRole('button',{name:'Close',exact:true}).tap();assert.equal(await page.locator('#syncDlg').evaluate(el=>el.open),false);
  },{cloudBackend:backend,mobile:true});
 });
+for(const mobile of [false,true])test(`manual person date range feeds Programme without recording attendance on ${mobile?'phone':'desktop'}`,()=>withPage(async page=>{
+ const date=await seed(page);await page.evaluate(d=>{show('signin');setSiteDay(d);addManualSiteSnapshotRow()},date);
+ const end=await page.evaluate(d=>programmeAddDays(d,2),date);
+ await fill(page,'#siteManualDlg',{name:'Manual worker',position:'Formworker',crew:'Crew A',endDate:end});
+ await page.locator('#siteManualDlg button[type="submit"]').click();
+ assert.deepEqual(await page.evaluate(()=>{const b=db.bookings.at(-1);return {date:b.date,end:b.endDate,name:b.supplier,group:b.group}}),{date,end,name:'Manual worker',group:'Labour'});
+ assert.match(await page.locator('#bookingsTable').innerText(),/Manual worker/);const expected=await page.evaluate(d=>bookedSnapshotRows(d).find(r=>r.name==='Manual worker'),end);assert.equal(expected.booked,true);assert.equal(expected.in,false);assert.equal(expected.actual,0);assert.equal(expected.crew,'Crew A');
+ assert.equal(await page.evaluate(d=>bookedSnapshotRows(programmeAddDays(d,1)).some(r=>r.name==='Manual worker'),end),false);
+ await page.evaluate(()=>{const rows=currentSiteSnapshotRows();const r=rows.find(r=>r.name==='Manual worker');r.actual=4;r.in=true;renderSiteSnapshotRows(rows);saveSiteSnapshot(true)});
+ await page.reload();await page.waitForFunction(()=>appReady);await page.evaluate(d=>{show('signin');setSiteDay(d)},end);
+ assert.equal(await page.evaluate(()=>currentSiteSnapshotRows().find(r=>r.name==='Manual worker').actual),0);
+ assert.equal(await page.evaluate(d=>siteSnapshotForDate(d).rows.find(r=>r.name==='Manual worker').actual,date),4);
+ await page.evaluate(()=>addManualSiteSnapshotRow());await fill(page,'#siteManualDlg',{name:'One-off visitor'});await page.locator('#siteManualDlg [name="addToProgramme"]').uncheck();const count=await page.evaluate(()=>db.bookings.length);await page.locator('#siteManualDlg button[type="submit"]').click();assert.equal(await page.evaluate(()=>db.bookings.length),count);
+ await page.evaluate(()=>addManualSiteSnapshotRow());await fill(page,'#siteManualDlg',{name:'Invalid range',endDate:date});await page.locator('#siteManualDlg button[type="submit"]').click();assert.equal(await page.evaluate(()=>db.bookings.length),count);assert.equal(await page.locator('#siteManualDlg').evaluate(d=>d.open),true);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+},{mobile}));
